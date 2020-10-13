@@ -13,6 +13,7 @@ public:
 public:
 	// 공용 인터페이스
 	virtual bool Init() override;
+	virtual bool IsInitialized() override { return _IsInitialized; }
 	virtual void OnScreenResize(const ScreenPoint & InScreenSize) override;
 	virtual InputManager& GetInputManager() override { return _InputManager; }
 
@@ -60,6 +61,8 @@ public: // 주요 키 값
 	static const std::string SteveTexturePath;
 
 private:
+	bool _IsInitialized = false;
+
 	ScreenPoint _ScreenSize;
 	InputManager _InputManager;
 	CameraObject _MainCamera;

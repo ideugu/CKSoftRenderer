@@ -2,7 +2,7 @@
 #include "Precompiled.h"
 #include "SoftRenderer.h"
 
-SoftRenderer::SoftRenderer(GameEngineMode InGameEngineMode, RendererInterface* InRSI) : _GameEngineMode(InGameEngineMode), _RSIPtr(InRSI)
+SoftRenderer::SoftRenderer(GameEngineType InGameEngineType, RendererInterface* InRSI) : _GameEngineType(InGameEngineType), _RSIPtr(InRSI)
 {
 }
 
@@ -11,14 +11,18 @@ void SoftRenderer::OnTick()
 	if (!_AllInitialized)
 	{
 		// 퍼포먼스 카운터 초기화.
-		if(_PerformanceInitFunc && _PerformanceMeasureFunc)
+		if (!_PerformanceCheckInitialized)
 		{
-			_CyclesPerMilliSeconds = _PerformanceInitFunc();
-			_PerformanceCheckInitialized = true;
-		}
-		else
-		{
-			return;
+			if (_PerformanceInitFunc && _PerformanceMeasureFunc)
+			{
+				_CyclesPerMilliSeconds = _PerformanceInitFunc();
+				_PerformanceCheckInitialized = true;
+			}
+			else
+			{
+				assert(false);
+				return;
+			}
 		}
 
 		// 스크린 크기 확인
@@ -28,21 +32,34 @@ void SoftRenderer::OnTick()
 		}
 
 		// 소프트 렌더러 초기화.
-		if (!GetRenderer().Init(_ScreenSize))
+		if (!_RendererInitialized)
 		{
-			return;
+			_RendererInitialized = GetRenderer().Init(_ScreenSize);
+			if (!_RendererInitialized)
+			{
+				assert(false);
+				return;
+			}
 		}
-
-		_RendererInitialized = true;
 
 		// 게임 엔진 초기화
-		GetGameEngine().OnScreenResize(_ScreenSize);
-		if (!GetGameEngine().Init())
+		_GameEngineInitialized = GetGameEngine().IsInitialized();
+		if (!_GameEngineInitialized)
 		{
-			return;
+			GetGameEngine().OnScreenResize(_ScreenSize);
+			InputManager& input = GetGameEngine().GetInputManager();
+			if (!input.IsInputReady())
+			{
+				_InputBindingFunc(input);
+			}
+			
+			_GameEngineInitialized = GetGameEngine().Init();
+			if (!_GameEngineInitialized)
+			{
+				assert(false);
+				return;
+			}
 		}
-
-		_GameEngineInitialized = true;
 
 		_AllInitialized = _RendererInitialized && _PerformanceCheckInitialized && _GameEngineInitialized;
 		if (_AllInitialized)
@@ -58,7 +75,14 @@ void SoftRenderer::OnTick()
 		{
 			PreUpdate();
 
-			if (_GameEngineMode == GameEngineMode::DD)
+			// 게임 엔진 교체로 함수 리셋 진행
+			if (!_AllInitialized)
+			{
+				GetSystemInput().UpdateSystemInput();
+				return;
+			}
+
+			if (_GameEngineType == GameEngineType::DD)
 			{
 				Update2D(_FrameTime / 1000.f);
 				Render2D();
@@ -96,8 +120,9 @@ void SoftRenderer::OnShutdown()
 	GetRenderer().Shutdown();
 }
 
-void SoftRenderer::SetDefaultGameEngine(GameEngineMode InEngineMode)
+void SoftRenderer::SetDefaultGameEngine(GameEngineType InGameEngineType)
 {
+	_GameEngineType = InGameEngineType;
 }
 
 void SoftRenderer::PreUpdate()
@@ -113,11 +138,16 @@ void SoftRenderer::PreUpdate()
 	GetRenderer().Clear(_BackgroundColor);
 
 	// 버퍼 시각화
-	const InputManager& input = GetGameEngine().GetInputManager();
+	const SystemInputManager& sinput = GetSystemInput();
 
-	if (input.IsReleased(InputButton::F1)) { _CurrentDrawMode = DrawMode::Normal; }
-	if (input.IsReleased(InputButton::F2)) { _CurrentDrawMode = DrawMode::Wireframe; }
-	if (input.IsReleased(InputButton::F3)) { _CurrentDrawMode = DrawMode::DepthBuffer; }
+	if (sinput.IsReleased(SystemInputButton::F1)) { _CurrentDrawMode = DrawMode::Normal; }
+	if (sinput.IsReleased(SystemInputButton::F2)) { _CurrentDrawMode = DrawMode::Wireframe; }
+	if (sinput.IsReleased(SystemInputButton::F3)) { _CurrentDrawMode = DrawMode::DepthBuffer; }
+	if (sinput.IsReleased(SystemInputButton::F10))
+	{ 
+		SetDefaultGameEngine((_GameEngineType == GameEngineType::DD) ? GameEngineType::DDD : GameEngineType::DD);
+		_AllInitialized = false;
+	}
 }
 
 void SoftRenderer::PostUpdate()
@@ -127,6 +157,7 @@ void SoftRenderer::PostUpdate()
 
 	// 입력 상태 업데이트
 	GetGameEngine().GetInputManager().UpdateInput();
+	GetSystemInput().UpdateSystemInput();
 
 	// 성능 측정 마무리.
 	_FrameCount++;

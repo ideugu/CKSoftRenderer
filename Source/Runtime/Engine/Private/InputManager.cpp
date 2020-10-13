@@ -3,55 +3,39 @@
 
 float InputManager::GetAxis(InputAxis InInputAxis) const
 {
-	if (InInputAxis >= InputAxis::LastAxis)
-	{
-		return 0.f;
-	}
-
+	assert(InInputAxis < InputAxis::LastAxis);
 	return AxisMap[static_cast<size_t>(InInputAxis)]();
 }
 
 bool InputManager::IsPressed(InputButton InInputButton) const
 {
-	if (InInputButton >= InputButton::LastButton)
-	{
-		return false;
-	}
-
+	assert(InInputButton < InputButton::LastButton);
 	size_t targetIndex = static_cast<size_t>(InInputButton);
 	return (!PrevButtonStatus[targetIndex] && PressedButtonMap[targetIndex]());
 }
 
-bool CK::InputManager::IsPressing(InputButton InInputButton) const
+bool InputManager::IsPressing(InputButton InInputButton) const
 {
-	if (InInputButton >= InputButton::LastButton)
-	{
-		return false;
-	}
-
+	assert(InInputButton < InputButton::LastButton);
 	size_t targetIndex = static_cast<size_t>(InInputButton);
 	return (PrevButtonStatus[targetIndex] && PressedButtonMap[targetIndex]());
 }
 
 bool InputManager::IsReleased(InputButton InInputButton) const
 {
-	if (InInputButton >= InputButton::LastButton)
-	{
-		return false;
-	}
-
+	assert(InInputButton < InputButton::LastButton);
 	size_t targetIndex = static_cast<size_t>(InInputButton);
 	return (PrevButtonStatus[targetIndex] && !PressedButtonMap[targetIndex]());
 }
 
-bool InputManager::IsInputSystemReady() const
+bool InputManager::IsInputReady() const
 {
-	if (AxisMap.size() != static_cast<size_t>(InputAxis::LastAxis))
+	if (!AxisMap[0])
 	{
 		return false;
 	}
 
-	if (PressedButtonMap.size() != static_cast<size_t>(InputButton::LastButton))
+	if (!PressedButtonMap[0])
 	{
 		return false;
 	}
@@ -61,25 +45,17 @@ bool InputManager::IsInputSystemReady() const
 
 void InputManager::SetInputAxis(InputAxis InInputAxis, std::function<float()> InAxisFn)
 {
-	if (InInputAxis >= InputAxis::LastAxis)
-	{
-		return;
-	}
-
+	assert(InInputAxis < InputAxis::LastAxis);
 	AxisMap[static_cast<size_t>(InInputAxis)] = InAxisFn;
 }
 
 void InputManager::SetInputButton(InputButton InInputButton, std::function<bool()> InPressedFn)
 {
-	if (InInputButton >= InputButton::LastButton)
-	{
-		return;
-	}
-
+	assert(InInputButton < InputButton::LastButton);
 	PressedButtonMap[static_cast<size_t>(InInputButton)] = InPressedFn;
 }
 
-void CK::InputManager::UpdateInput()
+void InputManager::UpdateInput()
 {
 	size_t lastIndex = static_cast<size_t>(InputButton::LastButton);
 	for (size_t bi = 0; bi < lastIndex; ++bi)

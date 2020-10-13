@@ -9,10 +9,13 @@ bool WindowsGDI::InitializeGDI(const ScreenPoint& InScreenSize)
 {
 	ReleaseGDI();
 
-	_Handle = ::GetActiveWindow();
-	if (_Handle == NULL)
+	if (_Handle == 0)
 	{
-		return false;
+		_Handle = ::GetActiveWindow();
+		if (_Handle == 0)
+		{
+			return false;
+		}
 	}
 
 	if (_GDIInitialized)

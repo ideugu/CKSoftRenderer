@@ -12,6 +12,7 @@
 #include "MathHeaders.h"
 #include "EngineHeaders.h"
 #include "RendererHeaders.h"
+#include "SystemInputManager.h"
 
 using namespace CK;
 

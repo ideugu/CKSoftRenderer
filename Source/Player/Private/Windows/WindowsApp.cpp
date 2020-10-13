@@ -7,7 +7,7 @@
 int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
 	ScreenPoint defScreenSize(800, 600);
-	SoftRenderer instance(GameEngineMode::DDD, new WindowsRSI());
+	SoftRenderer instance(GameEngineType::DDD, new WindowsRSI());
 	WindowsPlayer::gOnResizeFunc = [&instance](const ScreenPoint& InNewScreenSize) { 
 		if (InNewScreenSize.HasZero()) {
 			return;
@@ -16,7 +16,8 @@ int CALLBACK WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 	};
 	instance._PerformanceInitFunc = WindowsUtil::GetCyclesPerMilliSeconds;
 	instance._PerformanceMeasureFunc = WindowsUtil::GetCurrentTimeStamp;
-	WindowsUtil::BindInput(instance.GetGameEngine().GetInputManager());
+	instance._InputBindingFunc = WindowsUtil::BindInput;
+	WindowsUtil::BindSystemInput(instance.GetSystemInput());
 
 	if (!WindowsPlayer::Create(hInstance, defScreenSize))
 	{

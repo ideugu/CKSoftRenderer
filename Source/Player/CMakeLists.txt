@@ -6,6 +6,7 @@ project(SoftRendererPlayer)
 # Source files
 ################################################################################
 file(GLOB COMMON_SOURCE_FILES
+	${PROJECT_SOURCE_DIR}/Private/*.cpp
 	${PROJECT_SOURCE_DIR}/*.cpp
 	${PROJECT_SOURCE_DIR}/*.h
 	)

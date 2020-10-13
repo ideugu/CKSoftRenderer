@@ -1,6 +1,6 @@
 #pragma once
 
-enum class GameEngineMode : UINT32
+enum class GameEngineType : UINT32
 {
 	DD = 0,
 	DDD
@@ -44,7 +44,7 @@ class SoftRenderer
 {
 public:
 	// 생성자
-	SoftRenderer(GameEngineMode InGameEngineMode, RendererInterface* InRSI);
+	SoftRenderer(GameEngineType InGameEngineType, RendererInterface* InRSI);
 
 	// 윈도우 이벤트 처리
 	void OnTick();
@@ -52,6 +52,7 @@ public:
 	void OnShutdown();
 
 	// 프로그램 기본 정보
+	SystemInputManager& GetSystemInput() { return _SystemInputManager; }
 	const ScreenPoint& GetScreenSize() { return _ScreenSize; }
 	float GetFrameFPS() const { return _FrameFPS; }
 	FORCEINLINE float GetElapsedTime() const { return _ElapsedTime; }
@@ -59,15 +60,16 @@ public:
 	// 성능 측정
 	std::function<float()> _PerformanceInitFunc;
 	std::function<INT64()> _PerformanceMeasureFunc;
+	std::function<void(InputManager&)> _InputBindingFunc;
 
 	// 게임 엔진 레퍼런스 
-	FORCEINLINE EngineInterface& GetGameEngine() { return (_GameEngineMode == GameEngineMode::DD) ? static_cast<EngineInterface&>(_GameEngine2) : static_cast<EngineInterface&>(_GameEngine3); }
+	FORCEINLINE EngineInterface& GetGameEngine() { return (_GameEngineType == GameEngineType::DD) ? static_cast<EngineInterface&>(_GameEngine2) : static_cast<EngineInterface&>(_GameEngine3); }
 	FORCEINLINE DD::GameEngine& Get2DGameEngine() { return _GameEngine2; }
 	FORCEINLINE DDD::GameEngine& Get3DGameEngine() { return _GameEngine3; }
 
 private:
 	// 게임 엔진 설정
-	void SetDefaultGameEngine(GameEngineMode InEngineMode);
+	void SetDefaultGameEngine(GameEngineType InGameEngineType);
 
 	// 기본 루프 함수
 	void PreUpdate();
@@ -133,9 +135,12 @@ private:
 
 	// 렌더러 인터페이스
 	std::unique_ptr<RendererInterface> _RSIPtr;
-	GameEngineMode _GameEngineMode = GameEngineMode::DD;
+	GameEngineType _GameEngineType = GameEngineType::DD;
 
 	// 게임 엔진
 	DD::GameEngine _GameEngine2;
 	DDD::GameEngine _GameEngine3;
+
+	// 응용 프로그램 입력
+	SystemInputManager _SystemInputManager;
 };

@@ -43,13 +43,19 @@ void GameEngine::OnScreenResize(const ScreenPoint& InScreenSize)
 
 bool GameEngine::Init()
 {
+	// 이미 초기화되어 있으면 초기화 진행하지 않음.
+	if (_IsInitialized)
+	{
+		return true;
+	}
+
 	// 화면 크기가 올바로 설정되어 있는지 확인
 	if (_ScreenSize.HasZero())
 	{
 		return false;
 	}
 
-	if (!_InputManager.IsInputSystemReady())
+	if (!_InputManager.IsInputReady())
 	{
 		return false;
 	}
@@ -64,7 +70,8 @@ bool GameEngine::Init()
 		return false;
 	}
 
-	return true;
+	_IsInitialized = true;
+	return _IsInitialized;
 }
 
 bool GameEngine::LoadResources()

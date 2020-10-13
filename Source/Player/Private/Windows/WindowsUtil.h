@@ -110,8 +110,19 @@ namespace WindowsUtil
 		InInputManager.SetInputButton(InputButton::Space, []() { ISPRESSED(VK_SPACE); });
 		InInputManager.SetInputButton(InputButton::Z, []() { ISPRESSED(0x5A); });
 		InInputManager.SetInputButton(InputButton::X, []() { ISPRESSED(0x58); });
-		InInputManager.SetInputButton(InputButton::F1, []() { ISPRESSED(VK_F1); });
-		InInputManager.SetInputButton(InputButton::F2, []() { ISPRESSED(VK_F2); });
-		InInputManager.SetInputButton(InputButton::F3, []() { ISPRESSED(VK_F3); });
+	}
+
+	void BindSystemInput(SystemInputManager& InSystemInputManager)
+	{
+		InSystemInputManager.SetSystemInputButton(SystemInputButton::F1, []() { ISPRESSED(VK_F1); });
+		InSystemInputManager.SetSystemInputButton(SystemInputButton::F2, []() { ISPRESSED(VK_F2); });
+		InSystemInputManager.SetSystemInputButton(SystemInputButton::F3, []() { ISPRESSED(VK_F3); });
+		InSystemInputManager.SetSystemInputButton(SystemInputButton::F4, []() { ISPRESSED(VK_F4); });
+		InSystemInputManager.SetSystemInputButton(SystemInputButton::F5, []() { ISPRESSED(VK_F5); });
+		InSystemInputManager.SetSystemInputButton(SystemInputButton::F6, []() { ISPRESSED(VK_F6); });
+		InSystemInputManager.SetSystemInputButton(SystemInputButton::F7, []() { ISPRESSED(VK_F7); });
+		InSystemInputManager.SetSystemInputButton(SystemInputButton::F8, []() { ISPRESSED(VK_F8); });
+		InSystemInputManager.SetSystemInputButton(SystemInputButton::F9, []() { ISPRESSED(VK_F9); });
+		InSystemInputManager.SetSystemInputButton(SystemInputButton::F10, []() { ISPRESSED(VK_F10); });
 	}
 }
