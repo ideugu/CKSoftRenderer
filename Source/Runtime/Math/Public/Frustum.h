@@ -6,20 +6,24 @@ namespace CK
 struct Frustum
 {
 	// 생성자
-	Frustum() = default;
-	Frustum(const std::array<Plane, 6>& InPlanes);
+	FORCEINLINE constexpr Frustum() = default;
+	FORCEINLINE constexpr Frustum(const std::array<Plane, 6>& InPlanes);
 
 	// 멤버함수 
-	FORCEINLINE BoundCheckResult CheckBound(const Vector3& InPoint) const;
-	FORCEINLINE BoundCheckResult CheckBound(const Sphere& InSphere) const;
-	FORCEINLINE BoundCheckResult CheckBound(const Box& InBox) const;
-	FORCEINLINE bool IsIntersect(const Box& InBox) const;
+	FORCEINLINE constexpr BoundCheckResult CheckBound(const Vector3& InPoint) const;
+	FORCEINLINE constexpr BoundCheckResult CheckBound(const Sphere& InSphere) const;
+	FORCEINLINE constexpr BoundCheckResult CheckBound(const Box& InBox) const;
+	FORCEINLINE constexpr bool IsIntersect(const Box& InBox) const;
 
-	// 멤버변수 	
+	// 멤버변수
 	std::array<Plane, 6> Planes; // Y+, Y-, X+, X-, Z+, Z- 순으로 저장
 };
 
-FORCEINLINE BoundCheckResult Frustum::CheckBound(const Vector3& InPoint) const
+FORCEINLINE constexpr Frustum::Frustum(const std::array<Plane, 6>& InPlanes) : Planes(InPlanes)
+{
+}
+
+FORCEINLINE constexpr BoundCheckResult Frustum::CheckBound(const Vector3& InPoint) const
 {
 	for (const auto& p : Planes)
 	{
@@ -37,7 +41,7 @@ FORCEINLINE BoundCheckResult Frustum::CheckBound(const Vector3& InPoint) const
 	return BoundCheckResult::Inside;
 }
 
-FORCEINLINE BoundCheckResult Frustum::CheckBound(const Sphere& InSphere) const
+FORCEINLINE constexpr BoundCheckResult Frustum::CheckBound(const Sphere& InSphere) const
 {
 	for (const auto& p : Planes)
 	{
@@ -55,7 +59,7 @@ FORCEINLINE BoundCheckResult Frustum::CheckBound(const Sphere& InSphere) const
 	return BoundCheckResult::Inside;
 }
 
-FORCEINLINE BoundCheckResult Frustum::CheckBound(const Box& InBox) const
+FORCEINLINE constexpr BoundCheckResult Frustum::CheckBound(const Box& InBox) const
 {
 	for (const auto& p : Planes)
 	{
@@ -77,7 +81,7 @@ FORCEINLINE BoundCheckResult Frustum::CheckBound(const Box& InBox) const
 	return BoundCheckResult::Inside;
 }
 
-FORCEINLINE bool Frustum::IsIntersect(const Box& InBox) const
+FORCEINLINE constexpr bool Frustum::IsIntersect(const Box& InBox) const
 {
 	for (const auto& p : Planes)
 	{

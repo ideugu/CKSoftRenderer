@@ -6,28 +6,28 @@ namespace CK
 struct Box
 {
 public:
-	Box() = default;
-	Box(const Box& InBox) : Min(InBox.Min), Max(InBox.Max) { }
-	Box(const Vector3& InMinVector, const Vector3& InMaxVector) : Min(InMinVector), Max(InMaxVector) { }
+	FORCEINLINE constexpr Box() = default;
+	FORCEINLINE constexpr Box(const Box& InBox) : Min(InBox.Min), Max(InBox.Max) { }
+	FORCEINLINE constexpr Box(const Vector3& InMinVector, const Vector3& InMaxVector) : Min(InMinVector), Max(InMaxVector) { }
 	Box(const std::vector<Vector3> InVertices);
 
-	FORCEINLINE bool Intersect(const Box& InBox) const;
-	FORCEINLINE bool IsInside(const Box& InBox) const;
-	FORCEINLINE bool IsInside(const Vector3& InVector) const;
+	FORCEINLINE constexpr bool Intersect(const Box& InBox) const;
+	FORCEINLINE constexpr bool IsInside(const Box& InBox) const;
+	FORCEINLINE constexpr bool IsInside(const Vector3& InVector) const;
 
-	FORCEINLINE Box operator+=(const Vector3& InVector);
-	FORCEINLINE Box operator+=(const Box& InBox);
+	FORCEINLINE constexpr Box operator+=(const Vector3& InVector);
+	FORCEINLINE constexpr Box operator+=(const Box& InBox);
 
-	FORCEINLINE Vector3 GetSize() const;
-	FORCEINLINE Vector3 GetExtent() const;
-	FORCEINLINE void GetCenterAndExtent(Vector3& OutCenter, Vector3& OutExtent) const;
+	FORCEINLINE constexpr Vector3 GetSize() const;
+	FORCEINLINE constexpr Vector3 GetExtent() const;
+	FORCEINLINE constexpr void GetCenterAndExtent(Vector3& OutCenter, Vector3& OutExtent) const;
 
 public:
 	Vector3 Min;
 	Vector3 Max;
 };
 
-FORCEINLINE bool Box::Intersect(const Box& InBox) const
+FORCEINLINE constexpr bool Box::Intersect(const Box& InBox) const
 {
 	if ((Min.X > InBox.Max.X) || (InBox.Min.X > Max.X))
 	{
@@ -47,17 +47,17 @@ FORCEINLINE bool Box::Intersect(const Box& InBox) const
 	return true;
 }
 
-FORCEINLINE bool Box::IsInside(const Box& InBox) const
+FORCEINLINE constexpr bool Box::IsInside(const Box& InBox) const
 {
 	return (IsInside(InBox.Min) && IsInside(InBox.Max));
 }
 
-FORCEINLINE bool Box::IsInside(const Vector3& InVector) const
+FORCEINLINE constexpr bool Box::IsInside(const Vector3& InVector) const
 {
 	return ((InVector.X >= Min.X) && (InVector.X <= Max.X) && (InVector.Y >= Min.Y) && (InVector.Y <= Max.Y) && (InVector.Z >= Min.Z) && (InVector.Z <= Max.Z));
 }
 
-FORCEINLINE Box Box::operator+=(const Vector3& InVector)
+FORCEINLINE constexpr Box Box::operator+=(const Vector3& InVector)
 {
 	Min.X = Math::Min(Min.X, InVector.X);
 	Min.Y = Math::Min(Min.Y, InVector.Y);
@@ -70,7 +70,7 @@ FORCEINLINE Box Box::operator+=(const Vector3& InVector)
 	return *this;
 }
 
-FORCEINLINE Box Box::operator+=(const Box& InBox)
+FORCEINLINE constexpr Box Box::operator+=(const Box& InBox)
 {
 	Min.X = Math::Min(Min.X, InBox.Min.X);
 	Min.Y = Math::Min(Min.Y, InBox.Min.Y);
@@ -82,17 +82,17 @@ FORCEINLINE Box Box::operator+=(const Box& InBox)
 	return *this;
 }
 
-FORCEINLINE Vector3 Box::GetSize() const
+FORCEINLINE constexpr Vector3 Box::GetSize() const
 {
 	return (Max - Min);
 }
 
-FORCEINLINE Vector3 Box::GetExtent() const
+FORCEINLINE constexpr Vector3 Box::GetExtent() const
 {
 	return GetSize() * 0.5f;
 }
 
-FORCEINLINE void Box::GetCenterAndExtent(Vector3 & OutCenter, Vector3 & OutExtent) const
+FORCEINLINE constexpr void Box::GetCenterAndExtent(Vector3 & OutCenter, Vector3 & OutExtent) const
 {
 	OutExtent = GetExtent();
 	OutCenter = Min + OutExtent;

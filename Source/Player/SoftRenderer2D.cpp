@@ -190,60 +190,62 @@ void SoftRenderer::DrawTriangle2D(std::vector<DD::Vertex2D>& InVertices, const L
 		r.DrawLine(InVertices[0].Position, InVertices[1].Position, finalColor);
 		r.DrawLine(InVertices[0].Position, InVertices[2].Position, finalColor);
 		r.DrawLine(InVertices[1].Position, InVertices[2].Position, finalColor);
-		return;
 	}
-
-	// 삼각형 칠하기
-	// 삼각형의 영역 설정
-	Vector2 minPos(Math::Min3(InVertices[0].Position.X, InVertices[1].Position.X, InVertices[2].Position.X), Math::Min3(InVertices[0].Position.Y, InVertices[1].Position.Y, InVertices[2].Position.Y));
-	Vector2 maxPos(Math::Max3(InVertices[0].Position.X, InVertices[1].Position.X, InVertices[2].Position.X), Math::Max3(InVertices[0].Position.Y, InVertices[1].Position.Y, InVertices[2].Position.Y));
-
-	// 무게중심좌표를 위해 점을 벡터로 변환
-	Vector2 u = InVertices[1].Position - InVertices[0].Position;
-	Vector2 v = InVertices[2].Position - InVertices[0].Position;
-
-	// 공통 분모 값 ( uu * vv - uv * uv )
-	float udotv = u.Dot(v);
-	float vdotv = v.Dot(v);
-	float udotu = u.Dot(u);
-	float denominator = udotv * udotv - vdotv * udotu;
-
-	// 퇴화 삼각형 판정.
-	if (Math::EqualsInTolerance(denominator, 0.f))
+	else
 	{
-		return;
-	}
+		// 삼각형 칠하기
+		// 삼각형의 영역 설정
+		Vector2 minPos(Math::Min3(InVertices[0].Position.X, InVertices[1].Position.X, InVertices[2].Position.X), Math::Min3(InVertices[0].Position.Y, InVertices[1].Position.Y, InVertices[2].Position.Y));
+		Vector2 maxPos(Math::Max3(InVertices[0].Position.X, InVertices[1].Position.X, InVertices[2].Position.X), Math::Max3(InVertices[0].Position.Y, InVertices[1].Position.Y, InVertices[2].Position.Y));
 
-	float invDenominator = 1.f / denominator;
+		// 무게중심좌표를 위해 점을 벡터로 변환
+		Vector2 u = InVertices[1].Position - InVertices[0].Position;
+		Vector2 v = InVertices[2].Position - InVertices[0].Position;
 
-	ScreenPoint lowerLeftPoint = ScreenPoint::ToScreenCoordinate(_ScreenSize, minPos);
-	ScreenPoint upperRightPoint = ScreenPoint::ToScreenCoordinate(_ScreenSize, maxPos);
+		// 공통 분모 값 ( uu * vv - uv * uv )
+		float udotv = u.Dot(v);
+		float vdotv = v.Dot(v);
+		float udotu = u.Dot(u);
+		float denominator = udotv * udotv - vdotv * udotu;
 
-	// 두 점이 화면 밖을 벗어나는 경우 클리핑 처리
-	lowerLeftPoint.X = Math::Max(0, lowerLeftPoint.X);
-	lowerLeftPoint.Y = Math::Min(_ScreenSize.Y, lowerLeftPoint.Y);
-	upperRightPoint.X = Math::Min(_ScreenSize.X, upperRightPoint.X);
-	upperRightPoint.Y = Math::Max(0, upperRightPoint.Y);
-
-	// 삼각형 영역 내 모든 점을 점검하고 색칠
-	for (int x = lowerLeftPoint.X; x <= upperRightPoint.X; ++x)
-	{
-		for (int y = upperRightPoint.Y; y <= lowerLeftPoint.Y; ++y)
+		// 퇴화 삼각형 판정.
+		if (Math::EqualsInTolerance(denominator, 0.f))
 		{
-			ScreenPoint fragment = ScreenPoint(x, y);
-			Vector2 pointToTest = fragment.ToCartesianCoordinate(_ScreenSize);
-			Vector2 w = pointToTest - InVertices[0].Position;
-			float wdotu = w.Dot(u);
-			float wdotv = w.Dot(v);
+			return;
+		}
 
-			float s = (wdotv * udotv - wdotu * vdotv) * invDenominator;
-			float t = (wdotu * udotv - wdotv * udotu) * invDenominator;
-			float oneMinusST = 1.f - s - t;
-			if (((s >= 0.f) && (s <= 1.f)) && ((t >= 0.f) && (t <= 1.f)) && ((oneMinusST >= 0.f) && (oneMinusST <= 1.f)))
+		float invDenominator = 1.f / denominator;
+
+		ScreenPoint lowerLeftPoint = ScreenPoint::ToScreenCoordinate(_ScreenSize, minPos);
+		ScreenPoint upperRightPoint = ScreenPoint::ToScreenCoordinate(_ScreenSize, maxPos);
+
+		// 두 점이 화면 밖을 벗어나는 경우 클리핑 처리
+		lowerLeftPoint.X = Math::Max(0, lowerLeftPoint.X);
+		lowerLeftPoint.Y = Math::Min(_ScreenSize.Y, lowerLeftPoint.Y);
+		upperRightPoint.X = Math::Min(_ScreenSize.X, upperRightPoint.X);
+		upperRightPoint.Y = Math::Max(0, upperRightPoint.Y);
+
+		// 삼각형 영역 내 모든 점을 점검하고 색칠
+		for (int x = lowerLeftPoint.X; x <= upperRightPoint.X; ++x)
+		{
+			for (int y = upperRightPoint.Y; y <= lowerLeftPoint.Y; ++y)
 			{
-				Vector2 targetUV = InVertices[0].UV * oneMinusST + InVertices[1].UV * s + InVertices[2].UV * t;
-				r.DrawPoint(fragment, FragmentShader2D(g.GetTexture(GameEngine::DiffuseTexture).GetSample(targetUV), LinearColor::White));
+				ScreenPoint fragment = ScreenPoint(x, y);
+				Vector2 pointToTest = fragment.ToCartesianCoordinate(_ScreenSize);
+				Vector2 w = pointToTest - InVertices[0].Position;
+				float wdotu = w.Dot(u);
+				float wdotv = w.Dot(v);
+
+				float s = (wdotv * udotv - wdotu * vdotv) * invDenominator;
+				float t = (wdotu * udotv - wdotv * udotu) * invDenominator;
+				float oneMinusST = 1.f - s - t;
+				if (((s >= 0.f) && (s <= 1.f)) && ((t >= 0.f) && (t <= 1.f)) && ((oneMinusST >= 0.f) && (oneMinusST <= 1.f)))
+				{
+					Vector2 targetUV = InVertices[0].UV * oneMinusST + InVertices[1].UV * s + InVertices[2].UV * t;
+					r.DrawPoint(fragment, FragmentShader2D(g.GetTexture(GameEngine::DiffuseTexture).GetSample(targetUV), LinearColor::White));
+				}
 			}
 		}
+
 	}
 }

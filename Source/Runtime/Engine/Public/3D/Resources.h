@@ -9,7 +9,7 @@ namespace DDD
 /// 큐브 메시 정보
 /// </summary>
 
-const static std::array<Vector3, 24> cubeMeshPositions = {
+constexpr static std::array<Vector3, 24> cubeMeshPositions = {
 	Vector3(-1.f, -1.f, -1.f), Vector3(-1.f, -1.f, 1.f), Vector3(-1.f, 1.f, 1.f), Vector3(-1.f, 1.f, -1.f),
 	Vector3(-1.f, -1.f, 1.f), Vector3(-1.f, 1.f, 1.f), Vector3(1.f, 1.f, 1.f), Vector3(1.f, -1.f, 1.f),
 	Vector3(-1.f, -1.f, -1.f), Vector3(-1.f, 1.f, -1.f), Vector3(1.f, 1.f, -1.f), Vector3(1.f, -1.f, -1.f),
@@ -18,7 +18,7 @@ const static std::array<Vector3, 24> cubeMeshPositions = {
 	Vector3(-1.f, -1.f, -1.f), Vector3(1.f, -1.f, -1.f), Vector3(1.f, -1.f, 1.f), Vector3(-1.f, -1.f, 1.f)
 };
 
-const static std::array<size_t, 36> cubeMeshIndice = {
+constexpr static std::array<size_t, 36> cubeMeshIndice = {
 	0, 1, 2, 0, 2, 3, // Right
 	4, 6, 5, 4, 7, 6, // Front
 	8, 9, 10, 8, 10, 11, // Back
@@ -31,7 +31,7 @@ const static std::array<size_t, 36> cubeMeshIndice = {
 /// 화살표 메시 정보
 /// </summary>
 
-const static std::array<Vector3, 29> arrowPositions = {
+constexpr static std::array<Vector3, 29> arrowPositions = {
 	// Shaft
 	Vector3(-0.2f, -0.2f, 0.f), Vector3(-0.2f, -0.2f, 0.75f), Vector3(-0.2f, 0.2f, 0.75f), Vector3(-0.2f, 0.2f, 0.f),
 	Vector3(-0.2f, -0.2f, 0.75f), Vector3(-0.2f, 0.2f, 0.75f), Vector3(0.2f, 0.2f, 0.75f), Vector3(0.2f, -0.2f, 0.75f),
@@ -45,7 +45,7 @@ const static std::array<Vector3, 29> arrowPositions = {
 	Vector3(0.f, 0.f, 1.f)
 };
 
-const static std::array<size_t, 54> arrowIndice = {
+constexpr static std::array<size_t, 54> arrowIndice = {
 	// Shaft
 	0, 1, 2, 0, 2, 3,
 	4, 6, 5, 4, 7, 6,

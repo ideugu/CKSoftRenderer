@@ -6,28 +6,28 @@ namespace CK
 struct Rectangle
 {
 public:
-	Rectangle() = default;
-	Rectangle(const Rectangle& InRectangle) : Min(InRectangle.Min), Max(InRectangle.Max) { }
-	Rectangle(const Vector2& InMinVector, const Vector2& InMaxVector) : Min(InMinVector), Max(InMaxVector) { }
+	FORCEINLINE constexpr Rectangle() = default;
+	FORCEINLINE constexpr Rectangle(const Rectangle& InRectangle) : Min(InRectangle.Min), Max(InRectangle.Max) { }
+	FORCEINLINE constexpr Rectangle(const Vector2& InMinVector, const Vector2& InMaxVector) : Min(InMinVector), Max(InMaxVector) { }
 	Rectangle(const std::vector<Vector2> InVertices);
 
-	FORCEINLINE bool Intersect(const Rectangle& InRectangle) const;
-	FORCEINLINE bool IsInside(const Rectangle& InRectangle) const;
-	FORCEINLINE bool IsInside(const Vector2& InVector) const;
+	FORCEINLINE constexpr bool Intersect(const Rectangle& InRectangle) const;
+	FORCEINLINE constexpr bool IsInside(const Rectangle& InRectangle) const;
+	FORCEINLINE constexpr bool IsInside(const Vector2& InVector) const;
 
-	FORCEINLINE Rectangle operator+=(const Vector2& InVector);
-	FORCEINLINE Rectangle operator+=(const Rectangle& InRectangle);
+	FORCEINLINE constexpr Rectangle operator+=(const Vector2& InVector);
+	FORCEINLINE constexpr Rectangle operator+=(const Rectangle& InRectangle);
 
-	FORCEINLINE Vector2 GetSize() const;
-	FORCEINLINE Vector2 GetExtent() const;
-	FORCEINLINE void GetCenterAndExtent(Vector2& OutCenter, Vector2& OutExtent) const;
+	FORCEINLINE constexpr Vector2 GetSize() const;
+	FORCEINLINE constexpr Vector2 GetExtent() const;
+	FORCEINLINE constexpr void GetCenterAndExtent(Vector2& OutCenter, Vector2& OutExtent) const;
 
 public:
 	Vector2 Min;
 	Vector2 Max;
 };
 
-FORCEINLINE bool Rectangle::Intersect(const Rectangle& InRectangle) const
+FORCEINLINE constexpr bool Rectangle::Intersect(const Rectangle& InRectangle) const
 {
 	if ((Min.X > InRectangle.Max.X) || (InRectangle.Min.X > Max.X))
 	{
@@ -42,17 +42,17 @@ FORCEINLINE bool Rectangle::Intersect(const Rectangle& InRectangle) const
 	return true;
 }
 
-FORCEINLINE bool Rectangle::IsInside(const Rectangle& InRectangle) const
+FORCEINLINE constexpr bool Rectangle::IsInside(const Rectangle& InRectangle) const
 {
 	return (IsInside(InRectangle.Min) && IsInside(InRectangle.Max));
 }
 
-FORCEINLINE bool Rectangle::IsInside(const Vector2& InVector) const
+FORCEINLINE constexpr bool Rectangle::IsInside(const Vector2& InVector) const
 {
 	return ((InVector.X >= Min.X) && (InVector.X <= Max.X) && (InVector.Y >= Min.Y) && (InVector.Y <= Max.Y));
 }
 
-FORCEINLINE Rectangle Rectangle::operator+=(const Vector2& InVector)
+FORCEINLINE constexpr Rectangle Rectangle::operator+=(const Vector2& InVector)
 {
 	Min.X = Math::Min(Min.X, InVector.X);
 	Min.Y = Math::Min(Min.Y, InVector.Y);
@@ -62,7 +62,7 @@ FORCEINLINE Rectangle Rectangle::operator+=(const Vector2& InVector)
 	return *this;
 }
 
-FORCEINLINE Rectangle Rectangle::operator+=(const Rectangle& InRectangle)
+FORCEINLINE constexpr Rectangle Rectangle::operator+=(const Rectangle& InRectangle)
 {
 	Min.X = Math::Min(Min.X, InRectangle.Min.X);
 	Min.Y = Math::Min(Min.Y, InRectangle.Min.Y);
@@ -72,17 +72,17 @@ FORCEINLINE Rectangle Rectangle::operator+=(const Rectangle& InRectangle)
 	return *this;
 }
 
-FORCEINLINE Vector2 Rectangle::GetSize() const
+FORCEINLINE constexpr Vector2 Rectangle::GetSize() const
 {
 	return (Max - Min);
 }
 
-FORCEINLINE Vector2 Rectangle::GetExtent() const
+FORCEINLINE constexpr Vector2 Rectangle::GetExtent() const
 {
 	return GetSize() * 0.5f;
 }
 
-FORCEINLINE void Rectangle::GetCenterAndExtent(Vector2 & OutCenter, Vector2 & OutExtent) const
+FORCEINLINE constexpr void Rectangle::GetCenterAndExtent(Vector2 & OutCenter, Vector2 & OutExtent) const
 {
 	OutExtent = GetExtent();
 	OutCenter = Min + OutExtent;

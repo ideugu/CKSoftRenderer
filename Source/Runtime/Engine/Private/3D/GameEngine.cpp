@@ -70,22 +70,22 @@ bool GameEngine::Init()
 bool GameEngine::LoadResources()
 {
 	// 캐릭터 메시 생성
-	static const Vector3 headSize(0.5f, 0.5f, 0.5f);
-	static const Vector3 bodySize(0.5f, 0.75f, 0.25f);
-	static const Vector3 armLegSize(0.25f, 0.75f, 0.25f);
+	constexpr Vector3 headSize(0.5f, 0.5f, 0.5f);
+	constexpr Vector3 bodySize(0.5f, 0.75f, 0.25f);
+	constexpr Vector3 armLegSize(0.25f, 0.75f, 0.25f);
 
-	constexpr size_t totalCharacterParts = 6;
+	constexpr BYTE totalCharacterParts = 6;
 	Mesh& characterMesh = CreateMesh(GameEngine::CharacterMesh);
 	auto& v = characterMesh.GetVertices();
 	auto& i = characterMesh.GetIndices();
 	auto& uv = characterMesh.GetUVs();
 
 	// 6개의 파트로 구성되어 있음.
-	static std::array<Vector3, totalCharacterParts> cubeMeshSize = {
+	static constexpr std::array<Vector3, totalCharacterParts> cubeMeshSize = {
 		headSize, bodySize, armLegSize, armLegSize, armLegSize, armLegSize
 	};
 
-	static std::array<Vector3, totalCharacterParts> cubeMeshOffset = {
+	static constexpr std::array<Vector3, totalCharacterParts> cubeMeshOffset = {
 		Vector3(0.f, 3.5f, 0.f), Vector3(0.f, 2.25f, 0.f), Vector3(-0.75f, 2.25f, 0.f), Vector3(0.75f, 2.25f, 0.f), Vector3(-0.25f, 0.75f, 0.f), Vector3(0.25f, 0.75f, 0.f)
 	};
 
@@ -261,10 +261,7 @@ bool GameEngine::LoadResources()
 
 	// 텍스쳐 로딩
 	Texture& diffuseTexture = CreateTexture(GameEngine::DiffuseTexture, GameEngine::SteveTexturePath);
-	if(!diffuseTexture.IsIntialized())
-	{
-		return false;
-	}
+	assert(diffuseTexture.IsIntialized());
 
 	return true;
 }
@@ -272,7 +269,7 @@ bool GameEngine::LoadResources()
 bool GameEngine::LoadScene()
 {
 	// 플레이어
-	static const float playerScale = 100.f;
+	constexpr float playerScale = 100.f;
 
 	GameObject& goPlayer = CreateNewGameObject(GameEngine::PlayerGo);
 	goPlayer.SetMesh(GameEngine::CharacterMesh);
@@ -333,6 +330,7 @@ GameObject& GameEngine::CreateNewGameObject(const std::string& InName)
 		if (targetHash == inHash)
 		{
 			// 중복된 키 발생. 무시.
+			assert(false);
 			return GameObject::Invalid;
 		}
 		else if (targetHash < inHash)
@@ -357,10 +355,5 @@ GameObject& GameEngine::GetGameObject(const std::string& InName)
 	std::size_t targetHash = std::hash<std::string>()(InName);
 	const auto it = std::lower_bound(SceneBegin(), SceneEnd(), targetHash, GameObjectCompare());
 
-	if (it != _Scene.end())
-	{
-		return *(*it).get();
-	}
-
-	return GameObject::Invalid;
+	return (it != _Scene.end()) ? *(*it).get() : GameObject::Invalid;
 }

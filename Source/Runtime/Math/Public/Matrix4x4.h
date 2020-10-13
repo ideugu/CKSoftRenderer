@@ -7,21 +7,21 @@ struct Matrix4x4
 {
 public:
 	// 생성자 
-	FORCEINLINE Matrix4x4();
-	FORCEINLINE explicit Matrix4x4(const Vector4& InCol0, const Vector4& InCol1, const Vector4& InCol2, const Vector4& InCol3);
+	FORCEINLINE constexpr Matrix4x4() = default;
+	FORCEINLINE explicit constexpr Matrix4x4(const Vector4& InCol0, const Vector4& InCol1, const Vector4& InCol2, const Vector4& InCol3) { Cols = { InCol0, InCol1, InCol2, InCol3 }; }
 
 	// 연산자 
 	FORCEINLINE const Vector4& operator[](BYTE InIndex) const;
 	FORCEINLINE Vector4& operator[](BYTE InIndex);
-	FORCEINLINE Matrix4x4 operator*(float InScalar) const;
-	FORCEINLINE Matrix4x4 operator*(const Matrix4x4& InMatrix) const;
-	FORCEINLINE Vector4 operator*(const Vector4& InVector) const;
+	FORCEINLINE constexpr Matrix4x4 operator*(float InScalar) const;
+	FORCEINLINE constexpr Matrix4x4 operator*(const Matrix4x4& InMatrix) const;
+	FORCEINLINE constexpr Vector4 operator*(const Vector4& InVector) const;
 	FORCEINLINE friend Vector4 operator*=(Vector4& InVector, const Matrix4x4& InMatrix)
 	{
 		InVector = InMatrix * InVector;
 		return InVector;
 	}
-	FORCEINLINE Vector3 operator*(const Vector3& InVector) const;
+	FORCEINLINE constexpr Vector3 operator*(const Vector3& InVector) const;
 	FORCEINLINE friend Vector3 operator*=(Vector3& InVector, const Matrix4x4& InMatrix)
 	{
 		InVector = InMatrix * InVector;
@@ -31,36 +31,24 @@ public:
 	// 멤버함수 
 	FORCEINLINE Matrix3x3 ToMatrix3x3() const;
 	FORCEINLINE void SetIdentity();
-	FORCEINLINE Matrix4x4 Tranpose() const;
+	FORCEINLINE constexpr Matrix4x4 Tranpose() const;
 
 	std::vector<std::string> ToStrings() const;
 
 	// 정적멤버변수 
 	static const Matrix4x4 Identity;
-	enum { Rank = 4 };
+	static constexpr BYTE Rank = 4;
 
 	// 멤버변수 
-	Vector4 Cols[4] = { Vector4::UnitX, Vector4::UnitY, Vector4::UnitZ, Vector4::UnitW };
+	std::array<Vector4, Rank> Cols = { Vector4::UnitX, Vector4::UnitY, Vector4::UnitZ, Vector4::UnitW };
 };
-
-FORCEINLINE Matrix4x4::Matrix4x4()
-{
-}
-
-FORCEINLINE Matrix4x4::Matrix4x4(const Vector4& InCol0, const Vector4& InCol1, const Vector4& InCol2, const Vector4& InCol3)
-{
-	Cols[0] = InCol0;
-	Cols[1] = InCol1;
-	Cols[2] = InCol2;
-	Cols[3] = InCol3;
-}
 
 FORCEINLINE void Matrix4x4::SetIdentity()
 {
 	*this = Matrix4x4::Identity;
 }
 
-FORCEINLINE Matrix4x4 Matrix4x4::Tranpose() const
+FORCEINLINE constexpr Matrix4x4 Matrix4x4::Tranpose() const
 {
 	return Matrix4x4(
 		Vector4(Cols[0].X, Cols[1].X, Cols[2].X, Cols[3].X),
@@ -80,7 +68,7 @@ FORCEINLINE Vector4& Matrix4x4::operator[](BYTE InIndex)
 	return (InIndex < Rank) ? Cols[InIndex] : Cols[0];
 }
 
-FORCEINLINE Matrix4x4 Matrix4x4::operator*(float InScalar) const
+FORCEINLINE constexpr Matrix4x4 Matrix4x4::operator*(float InScalar) const
 {
 	return Matrix4x4(
 		Cols[0] * InScalar,
@@ -90,7 +78,7 @@ FORCEINLINE Matrix4x4 Matrix4x4::operator*(float InScalar) const
 	);
 }
 
-FORCEINLINE Matrix4x4 Matrix4x4::operator*(const Matrix4x4 &InMatrix) const
+FORCEINLINE constexpr Matrix4x4 Matrix4x4::operator*(const Matrix4x4 &InMatrix) const
 {
 	Matrix4x4 tpMat = Tranpose();
 	return Matrix4x4(
@@ -101,7 +89,7 @@ FORCEINLINE Matrix4x4 Matrix4x4::operator*(const Matrix4x4 &InMatrix) const
 	);
 }
 
-FORCEINLINE Vector4 Matrix4x4::operator*(const Vector4& InVector) const
+FORCEINLINE constexpr Vector4 Matrix4x4::operator*(const Vector4& InVector) const
 {
 	Matrix4x4 tpMat = Tranpose();
 	return Vector4(
@@ -112,12 +100,12 @@ FORCEINLINE Vector4 Matrix4x4::operator*(const Vector4& InVector) const
 	);
 }
 
-FORCEINLINE Vector3 Matrix4x4::operator*(const Vector3& InVector) const
+FORCEINLINE constexpr Vector3 Matrix4x4::operator*(const Vector3& InVector) const
 {
 	Vector4 v4(InVector);
-	v4 *= *this;
+	Vector4 result = *this * v4;
 
-	return v4.ToVector3();
+	return Vector3(result.X, result.Y, result.Z);
 }
 
 FORCEINLINE Matrix3x3 Matrix4x4::ToMatrix3x3() const

@@ -6,24 +6,24 @@ namespace CK
 struct Quaternion
 {
 public:
-	FORCEINLINE Quaternion() = default;
-	FORCEINLINE explicit Quaternion(float InX, float InY, float InZ, float InW) : X(InX), Y(InY), Z(InZ), W(InW) { }
-	FORCEINLINE explicit Quaternion(const Vector3& InAxis, float InAngleDegree)
+	FORCEINLINE constexpr Quaternion() = default;
+	FORCEINLINE explicit constexpr Quaternion(float InX, float InY, float InZ, float InW) : X(InX), Y(InY), Z(InZ), W(InW) { }
+	FORCEINLINE explicit constexpr Quaternion(const Vector3& InAxis, float InAngleDegree)
 	{
 		FromAxisAngle(InAxis, InAngleDegree);
 	}
 
-	FORCEINLINE explicit Quaternion(const Rotator& InRotator)
+	FORCEINLINE explicit constexpr Quaternion(const Rotator& InRotator)
 	{
 		FromRotator(InRotator);
 	}
 
-	FORCEINLINE explicit Quaternion(const Vector3& InVector, const Vector3& InUp = Vector3::UnitY)
+	FORCEINLINE Quaternion(const Vector3& InVector, const Vector3& InUp = Vector3::UnitY)
 	{
 		FromVector(InVector, InUp);
 	}
 
-	FORCEINLINE explicit Quaternion(const Matrix3x3& InMatrix)
+	FORCEINLINE Quaternion(const Matrix3x3& InMatrix)
 	{
 		FromMatrix(InMatrix);
 	}
@@ -31,17 +31,17 @@ public:
 	// »ý¼º
 	FORCEINLINE void FromMatrix(const Matrix3x3& InMatrix);
 	FORCEINLINE void FromVector(const Vector3& InVector, const Vector3& InUp = Vector3::UnitY);
-	FORCEINLINE void FromAxisAngle(const Vector3& InAxis, float InAngleDegree);
-	FORCEINLINE void FromRotator(const Rotator& InRotator);
+	FORCEINLINE constexpr void FromAxisAngle(const Vector3& InAxis, float InAngleDegree);
+	FORCEINLINE constexpr void FromRotator(const Rotator& InRotator);
 
 
-	FORCEINLINE Quaternion operator*(const Quaternion& InQuaternion) const;
-	FORCEINLINE Quaternion operator*=(const Quaternion& InQuaternion);
-	FORCEINLINE Vector3 operator*(const Vector3& InVector) const;
+	FORCEINLINE constexpr Quaternion operator*(const Quaternion& InQuaternion) const;
+	FORCEINLINE constexpr Quaternion operator*=(const Quaternion& InQuaternion);
+	FORCEINLINE constexpr Vector3 operator*(const Vector3& InVector) const;
 	static Quaternion Slerp(const Quaternion &InQuaternion1, const Quaternion &InQuaternion2, float InRatio);
 
-	FORCEINLINE Vector3 RotateVector(const Vector3& InVector) const;
-	FORCEINLINE Quaternion Inverse() const { return Quaternion(-X, -Y, -Z, W); }
+	FORCEINLINE constexpr Vector3 RotateVector(const Vector3& InVector) const;
+	FORCEINLINE constexpr Quaternion Inverse() const { return Quaternion(-X, -Y, -Z, W); }
 	FORCEINLINE void Normalize();
 	FORCEINLINE Rotator ToRotator() const;
 	FORCEINLINE bool IsUnitQuaternion() const
@@ -55,8 +55,8 @@ public:
 		return false;
 	}
 
-	FORCEINLINE float RealPart() const { return W; }
-	FORCEINLINE Vector3 ImaginaryPart() const { return Vector3(X, Y, Z); }
+	FORCEINLINE constexpr float RealPart() const { return W; }
+	FORCEINLINE constexpr Vector3 ImaginaryPart() const { return Vector3(X, Y, Z); }
 	std::string ToString() const;
 
 	static const Quaternion Identity;
@@ -133,9 +133,9 @@ FORCEINLINE void Quaternion::FromVector(const Vector3& InVector, const Vector3& 
 	FromMatrix(Matrix3x3(viewX, viewY, viewZ));
 }
 
-FORCEINLINE void Quaternion::FromAxisAngle(const Vector3& InAxis, float InAngleDegree)
+FORCEINLINE constexpr void Quaternion::FromAxisAngle(const Vector3& InAxis, float InAngleDegree)
 {
-	float sin, cos;
+	float sin = 0.f, cos = 0.f;
 	Math::GetSinCos(sin, cos, InAngleDegree * 0.5f);
 	W = cos;
 	X = sin * InAxis.X;
@@ -143,10 +143,10 @@ FORCEINLINE void Quaternion::FromAxisAngle(const Vector3& InAxis, float InAngleD
 	Z = sin * InAxis.Z;
 }
 
-FORCEINLINE void Quaternion::FromRotator(const Rotator& InRotator)
+FORCEINLINE constexpr void Quaternion::FromRotator(const Rotator& InRotator)
 {
-	float sp, sy, sr;
-	float cp, cy, cr;
+	float sp = 0.f, sy = 0.f, sr = 0.f;
+	float cp = 0.f, cy = 0.f, cr = 0.f;
 
 	Math::GetSinCos(sp, cp, InRotator.Pitch * 0.5f);
 	Math::GetSinCos(sy, cy, InRotator.Yaw * 0.5f);
@@ -158,7 +158,7 @@ FORCEINLINE void Quaternion::FromRotator(const Rotator& InRotator)
 	Z = -sy * sp * cr + sr * cy * cp;
 }
 
-FORCEINLINE Quaternion Quaternion::operator*(const Quaternion & InQuaternion) const
+FORCEINLINE constexpr Quaternion Quaternion::operator*(const Quaternion & InQuaternion) const
 {
 	Quaternion result;
 	Vector3 v1(X, Y, Z), v2(InQuaternion.X, InQuaternion.Y, InQuaternion.Z);
@@ -171,7 +171,7 @@ FORCEINLINE Quaternion Quaternion::operator*(const Quaternion & InQuaternion) co
 	return result;
 }
 
-FORCEINLINE Quaternion Quaternion::operator*=(const Quaternion & InQuaternion)
+FORCEINLINE constexpr Quaternion Quaternion::operator*=(const Quaternion & InQuaternion)
 {
 	Vector3 v1(X, Y, Z), v2(InQuaternion.X, InQuaternion.Y, InQuaternion.Z);
 	W = W * InQuaternion.W - v1.Dot(v2);
@@ -182,7 +182,7 @@ FORCEINLINE Quaternion Quaternion::operator*=(const Quaternion & InQuaternion)
 	return *this;
 }
 
-FORCEINLINE Vector3 Quaternion::operator*(const Vector3& InVector) const
+FORCEINLINE constexpr Vector3 Quaternion::operator*(const Vector3& InVector) const
 {
 	return RotateVector(InVector);
 }
@@ -222,7 +222,7 @@ FORCEINLINE Quaternion Quaternion::Slerp(const Quaternion & InQuaternion1, const
 	return result;
 }
 
-FORCEINLINE Vector3 Quaternion::RotateVector(const Vector3& InVector) const
+FORCEINLINE constexpr Vector3 Quaternion::RotateVector(const Vector3& InVector) const
 {
 	Vector3 q(X, Y, Z);
 	Vector3 t = q.Cross(InVector) * 2.f;

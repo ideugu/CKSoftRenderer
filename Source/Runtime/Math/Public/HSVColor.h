@@ -6,9 +6,9 @@ namespace CK
 struct HSVColor
 {
 public:
-	FORCEINLINE HSVColor() = default;
-    FORCEINLINE HSVColor(float InH, float InS, float InV) : H(InH), S(InS), V(InV) {}
-    FORCEINLINE LinearColor ToLinearColor() const
+	FORCEINLINE constexpr HSVColor() = default;
+    FORCEINLINE constexpr HSVColor(float InH, float InS, float InV) : H(InH), S(InS), V(InV) {}
+    FORCEINLINE constexpr LinearColor ToLinearColor() const
 	{
         float r = 0.f, g = 0.f, b = 0.f;
 

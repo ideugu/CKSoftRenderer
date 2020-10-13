@@ -7,9 +7,8 @@ struct Matrix2x2
 {
 public:
 	// 생성자 
-	FORCEINLINE Matrix2x2();
-	FORCEINLINE explicit Matrix2x2(const Vector2& InCol0, const Vector2& InCol1);
-	FORCEINLINE explicit Matrix2x2(float In00, float In01, float In10, float In11);
+	FORCEINLINE constexpr Matrix2x2() = default;
+	FORCEINLINE explicit constexpr Matrix2x2(const Vector2& InCol0, const Vector2& InCol1) { Cols = { InCol0, InCol1 }; }
 
 	// 연산자 
 	FORCEINLINE const Vector2& operator[](BYTE InIndex) const;
@@ -31,30 +30,11 @@ public:
 
 	// 정적멤버변수 
 	static const Matrix2x2 Identity;
-	enum { Rank = 2 };
+	static constexpr BYTE Rank = 2;
 
 	// 멤버변수 
-	Vector2 Cols[2] = { Vector2::UnitX, Vector2::UnitY };
+	std::array<Vector2, Rank> Cols = { Vector2::UnitX, Vector2::UnitY };
 };
-
-FORCEINLINE Matrix2x2::Matrix2x2()
-{
-}
-
-FORCEINLINE Matrix2x2::Matrix2x2(const Vector2& InCol0, const Vector2& InCol1)
-{
-	Cols[0] = InCol0;
-	Cols[1] = InCol1;
-}
-
-FORCEINLINE Matrix2x2::Matrix2x2(float In00, float In01, float In10, float In11)
-{
-	Cols[0][0] = In00;
-	Cols[0][1] = In01;
-
-	Cols[1][0] = In10;
-	Cols[1][1] = In11;
-}
 
 FORCEINLINE void Matrix2x2::SetIdentity()
 {

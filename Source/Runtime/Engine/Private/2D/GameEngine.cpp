@@ -59,10 +59,10 @@ bool GameEngine::LoadResources()
 	// 메시 데이터 로딩
 	Mesh& quadMesh = CreateMesh(GameEngine::QuadMesh);
 
-	float squareHalfSize = 0.5f;
-	int vertexCount = 4;
-	int triangleCount = 2;
-	int indexCount = triangleCount * 3;
+	constexpr float squareHalfSize = 0.5f;
+	constexpr int vertexCount = 4;
+	constexpr int triangleCount = 2;
+	constexpr int indexCount = triangleCount * 3;
 
 	auto& v = quadMesh.GetVertices();
 	auto& i = quadMesh.GetIndices();
@@ -101,8 +101,8 @@ bool GameEngine::LoadResources()
 bool GameEngine::LoadScene()
 {
 	// 플레이어
-	static const float playerScale = 20.f;
-	static float squareScale = 10.f;
+	constexpr float playerScale = 20.f;
+	constexpr float squareScale = 10.f;
 
 	GameObject& goPlayer = CreateNewGameObject(GameEngine::PlayerGo);
 	goPlayer.SetMesh(GameEngine::QuadMesh);
@@ -114,9 +114,9 @@ bool GameEngine::LoadScene()
 	std::uniform_real_distribution<float> dist(-1000.f, 1000.f);
 
 	// 100개의 배경 게임 오브젝트 생성
+	char name[64];
 	for (int i = 0; i < 100; ++i)
 	{
-		char name[64];
 		std::snprintf(name, sizeof(name), "GameObject%d", i);
 		GameObject& newGo = CreateNewGameObject(name);
 		newGo.GetTransform().SetPosition(Vector2(dist(generator), dist(generator)));
@@ -155,6 +155,7 @@ GameObject& GameEngine::CreateNewGameObject(const std::string& InName)
 		if (targetHash == inHash)
 		{
 			// 중복된 키 발생. 무시.
+			assert(false);
 			return GameObject::Invalid;
 		}
 		else if (targetHash < inHash)
@@ -179,10 +180,5 @@ GameObject& GameEngine::GetGameObject(const std::string& InName)
 	std::size_t targetHash = std::hash<std::string>()(InName);
 	const auto it = std::lower_bound(SceneBegin(), SceneEnd(), targetHash, GameObjectCompare());
 
-	if (it != _Scene.end())
-	{
-		return *(*it).get();
-	}
-
-	return GameObject::Invalid;
+	return (it != _Scene.end()) ? *(*it).get() : GameObject::Invalid;
 }

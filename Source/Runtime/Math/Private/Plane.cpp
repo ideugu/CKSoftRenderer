@@ -2,16 +2,6 @@
 #include "Precompiled.h"
 using namespace CK;
 
-Plane::Plane(const Vector3& InNormal, float InDistance) : Normal(InNormal), D(InDistance)
-{
-}
-
-Plane::Plane(const Vector3& InNormal, Vector3 InPlanePoint) : Normal(InNormal)
-{
-	Normal.Normalize();
-	D = -Normal.Dot(InPlanePoint);
-}
-
 Plane::Plane(const Vector3& InPoint1, const Vector3& InPoint2, const Vector3& InPoint3)
 {
 	Vector3 v1 = InPoint2 - InPoint1;

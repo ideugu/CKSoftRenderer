@@ -6,8 +6,8 @@ namespace CK
 struct Rotator
 {
 public:
-	Rotator() = default;
-	FORCEINLINE Rotator(float InYaw, float InRoll, float InPitch) : Yaw(InYaw), Roll(InRoll), Pitch(InPitch) { }
+	FORCEINLINE constexpr Rotator() = default;
+	FORCEINLINE constexpr Rotator(float InYaw, float InRoll, float InPitch) : Yaw(InYaw), Roll(InRoll), Pitch(InPitch) { }
 	FORCEINLINE void Clamp()
 	{
 		Yaw = GetAxisClampedValue(Yaw);

@@ -7,9 +7,8 @@ struct Matrix3x3
 {
 public:
 	// 생성자 
-	FORCEINLINE Matrix3x3();
-	FORCEINLINE explicit Matrix3x3(const Vector3& InCol0, const Vector3& InCol1, const Vector3& InCol2);
-	FORCEINLINE explicit Matrix3x3(float In00, float In01, float In02, float In10, float In11, float In12, float In20, float In21, float In22);
+	FORCEINLINE constexpr Matrix3x3() = default;
+	FORCEINLINE explicit constexpr Matrix3x3(const Vector3& InCol0, const Vector3& InCol1, const Vector3& InCol2) { Cols = { InCol0, InCol1, InCol2 }; }
 
 	// 연산자 
 	FORCEINLINE const Vector3& operator[](BYTE InIndex) const;
@@ -39,37 +38,11 @@ public:
 
 	// 정적멤버변수 
 	static const Matrix3x3 Identity;
-	enum { Rank = 3 };
+	static constexpr BYTE Rank = 3;
 
 	// 멤버변수 
-	Vector3 Cols[3] = { Vector3::UnitX, Vector3::UnitY, Vector3::UnitZ };
+	std::array<Vector3, Rank> Cols = { Vector3::UnitX, Vector3::UnitY, Vector3::UnitZ };
 };
-
-FORCEINLINE Matrix3x3::Matrix3x3()
-{
-}
-
-FORCEINLINE Matrix3x3::Matrix3x3(const Vector3& InCol0, const Vector3& InCol1, const Vector3& InCol2)
-{
-	Cols[0] = InCol0;
-	Cols[1] = InCol1;
-	Cols[2] = InCol2;
-}
-
-FORCEINLINE Matrix3x3::Matrix3x3(float In00, float In01, float In02, float In10, float In11, float In12, float In20, float In21, float In22)
-{
-	Cols[0][0] = In00;
-	Cols[0][1] = In01;
-	Cols[0][2] = In02;
-
-	Cols[1][0] = In10;
-	Cols[1][1] = In11;
-	Cols[1][2] = In12;
-
-	Cols[2][0] = In20;
-	Cols[2][1] = In21;
-	Cols[2][2] = In22;
-}
 
 FORCEINLINE void Matrix3x3::SetIdentity()
 {

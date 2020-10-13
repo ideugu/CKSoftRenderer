@@ -321,123 +321,124 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 		r.DrawLine(InVertices[0].Position, InVertices[1].Position, finalColor);
 		r.DrawLine(InVertices[0].Position, InVertices[2].Position, finalColor);
 		r.DrawLine(InVertices[1].Position, InVertices[2].Position, finalColor);
-		return;
 	}
-
-	// 삼각형 칠하기
-	// 삼각형의 영역 설정
-	Vector2 minPos(Math::Min3(InVertices[0].Position.X, InVertices[1].Position.X, InVertices[2].Position.X), Math::Min3(InVertices[0].Position.Y, InVertices[1].Position.Y, InVertices[2].Position.Y));
-	Vector2 maxPos(Math::Max3(InVertices[0].Position.X, InVertices[1].Position.X, InVertices[2].Position.X), Math::Max3(InVertices[0].Position.Y, InVertices[1].Position.Y, InVertices[2].Position.Y));
-
-	// 무게중심좌표를 위해 점을 벡터로 변환
-	Vector2 u = InVertices[1].Position.ToVector2() - InVertices[0].Position.ToVector2();
-	Vector2 v = InVertices[2].Position.ToVector2() - InVertices[0].Position.ToVector2();
-
-	// 공통 분모 값 ( uu * vv - uv * uv )
-	float udotv = u.Dot(v);
-	float vdotv = v.Dot(v);
-	float udotu = u.Dot(u);
-	float denominator = udotv * udotv - vdotv * udotu;
-
-	// 퇴화 삼각형 판정.
-	if (Math::EqualsInTolerance(denominator,0.f))
+	else
 	{
-		return;
-	}
+		// 삼각형 칠하기
+		// 삼각형의 영역 설정
+		Vector2 minPos(Math::Min3(InVertices[0].Position.X, InVertices[1].Position.X, InVertices[2].Position.X), Math::Min3(InVertices[0].Position.Y, InVertices[1].Position.Y, InVertices[2].Position.Y));
+		Vector2 maxPos(Math::Max3(InVertices[0].Position.X, InVertices[1].Position.X, InVertices[2].Position.X), Math::Max3(InVertices[0].Position.Y, InVertices[1].Position.Y, InVertices[2].Position.Y));
 
-	float invDenominator = 1.f / denominator;
+		// 무게중심좌표를 위해 점을 벡터로 변환
+		Vector2 u = InVertices[1].Position.ToVector2() - InVertices[0].Position.ToVector2();
+		Vector2 v = InVertices[2].Position.ToVector2() - InVertices[0].Position.ToVector2();
 
-	// 화면상의 점 구하기
-	minPos.X *= _ScreenSize.X * 0.5f;
-	minPos.Y *= _ScreenSize.Y * 0.5f;
-	maxPos.X *= _ScreenSize.X * 0.5f;
-	maxPos.Y *= _ScreenSize.Y * 0.5f;
+		// 공통 분모 값 ( uu * vv - uv * uv )
+		float udotv = u.Dot(v);
+		float vdotv = v.Dot(v);
+		float udotu = u.Dot(u);
+		float denominator = udotv * udotv - vdotv * udotu;
 
-	ScreenPoint lowerLeftPoint = ScreenPoint::ToScreenCoordinate(_ScreenSize, minPos);
-	ScreenPoint upperRightPoint = ScreenPoint::ToScreenCoordinate(_ScreenSize, maxPos);
-
-	// 두 점이 화면 밖을 벗어나는 경우 클리핑 처리
-	lowerLeftPoint.X = Math::Max(0, lowerLeftPoint.X);
-	lowerLeftPoint.Y = Math::Min(_ScreenSize.Y, lowerLeftPoint.Y);
-	upperRightPoint.X = Math::Min(_ScreenSize.X, upperRightPoint.X);
-	upperRightPoint.Y = Math::Max(0, upperRightPoint.Y);
-
-	// 삼각형 영역 내 모든 점을 점검하고 색칠
-	for (int x = lowerLeftPoint.X; x <= upperRightPoint.X; ++x)
-	{
-		for (int y = upperRightPoint.Y; y <= lowerLeftPoint.Y; ++y)
+		// 퇴화 삼각형 판정.
+		if (Math::EqualsInTolerance(denominator, 0.f))
 		{
-			ScreenPoint fragment = ScreenPoint(x, y);
-			Vector2 pointToTest = fragment.ToCartesianCoordinate(_ScreenSize);
-			pointToTest.X *= (2.f / _ScreenSize.X);
-			pointToTest.Y *= (2.f / _ScreenSize.Y);
-			Vector2 w = pointToTest - InVertices[0].Position.ToVector2();
-			float wdotu = w.Dot(u);
-			float wdotv = w.Dot(v);
+			return;
+		}
 
-			float s = (wdotv * udotv - wdotu * vdotv) * invDenominator;
-			float t = (wdotu * udotv - wdotv * udotu) * invDenominator;
-			float oneMinusST = 1.f - s - t;
-			if (((s >= 0.f) && (s <= 1.f)) && ((t >= 0.f) && (t <= 1.f)) && ((oneMinusST >= 0.f) && (oneMinusST <= 1.f)))
+		float invDenominator = 1.f / denominator;
+
+		// 화면상의 점 구하기
+		minPos.X *= _ScreenSize.X * 0.5f;
+		minPos.Y *= _ScreenSize.Y * 0.5f;
+		maxPos.X *= _ScreenSize.X * 0.5f;
+		maxPos.Y *= _ScreenSize.Y * 0.5f;
+
+		ScreenPoint lowerLeftPoint = ScreenPoint::ToScreenCoordinate(_ScreenSize, minPos);
+		ScreenPoint upperRightPoint = ScreenPoint::ToScreenCoordinate(_ScreenSize, maxPos);
+
+		// 두 점이 화면 밖을 벗어나는 경우 클리핑 처리
+		lowerLeftPoint.X = Math::Max(0, lowerLeftPoint.X);
+		lowerLeftPoint.Y = Math::Min(_ScreenSize.Y, lowerLeftPoint.Y);
+		upperRightPoint.X = Math::Min(_ScreenSize.X, upperRightPoint.X);
+		upperRightPoint.Y = Math::Max(0, upperRightPoint.Y);
+
+		// 삼각형 영역 내 모든 점을 점검하고 색칠
+		for (int x = lowerLeftPoint.X; x <= upperRightPoint.X; ++x)
+		{
+			for (int y = upperRightPoint.Y; y <= lowerLeftPoint.Y; ++y)
 			{
-				// 각 점마다 보존된 뷰 공간의 z값
-				float invZ0 = 1.f / InVertices[0].Position.W;
-				float invZ1 = 1.f / InVertices[1].Position.W;
-				float invZ2 = 1.f / InVertices[2].Position.W;
+				ScreenPoint fragment = ScreenPoint(x, y);
+				Vector2 pointToTest = fragment.ToCartesianCoordinate(_ScreenSize);
+				pointToTest.X *= (2.f / _ScreenSize.X);
+				pointToTest.Y *= (2.f / _ScreenSize.Y);
+				Vector2 w = pointToTest - InVertices[0].Position.ToVector2();
+				float wdotu = w.Dot(u);
+				float wdotv = w.Dot(v);
 
-				// 투영 보정보간에 사용할 공통 분모
-				float z = invZ0 * oneMinusST + invZ1 * s + invZ2 * t;
-				float invZ = 1.f / z;
+				float s = (wdotv * udotv - wdotu * vdotv) * invDenominator;
+				float t = (wdotu * udotv - wdotv * udotu) * invDenominator;
+				float oneMinusST = 1.f - s - t;
+				if (((s >= 0.f) && (s <= 1.f)) && ((t >= 0.f) && (t <= 1.f)) && ((oneMinusST >= 0.f) && (oneMinusST <= 1.f)))
+				{
+					// 각 점마다 보존된 뷰 공간의 z값
+					float invZ0 = 1.f / InVertices[0].Position.W;
+					float invZ1 = 1.f / InVertices[1].Position.W;
+					float invZ2 = 1.f / InVertices[2].Position.W;
 
-				float n = g.GetMainCamera().GetNearZ();
-				float f = g.GetMainCamera().GetFarZ();
-				float newDepth = (InVertices[0].Position.Z * oneMinusST * invZ0 + InVertices[1].Position.Z * s * invZ1 + InVertices[2].Position.Z * t * invZ2) * invZ;
-				float prevDepth = r.GetDepthBufferValue(fragment);
-				if (newDepth < prevDepth)
-				{
-					r.SetDepthBufferValue(fragment, newDepth);
-				}
-				else
-				{
-					// 이미 앞에 무언가 그려져있으므로 픽셀그리기는 생략
-					continue;
-				}
+					// 투영 보정보간에 사용할 공통 분모
+					float z = invZ0 * oneMinusST + invZ1 * s + invZ2 * t;
+					float invZ = 1.f / z;
 
-				if (IsDepthBufferDrawing())
-				{
-					// 시각화를 위해 선형화된 흑백 값
-					float grayScale = (invZ - n) / (f - n);
-
-					// 뎁스 버퍼 그리기
-					r.DrawPoint(fragment, LinearColor::White * grayScale);
-				}
-				else
-				{
-					// 색상 파라미터가 설정 안된 경우에는 흰색을 사용
-					LinearColor paramColor = LinearColor::White;
-					if (InColor != LinearColor::Error)
+					float n = g.GetMainCamera().GetNearZ();
+					float f = g.GetMainCamera().GetFarZ();
+					float newDepth = (InVertices[0].Position.Z * oneMinusST * invZ0 + InVertices[1].Position.Z * s * invZ1 + InVertices[2].Position.Z * t * invZ2) * invZ;
+					float prevDepth = r.GetDepthBufferValue(fragment);
+					if (newDepth < prevDepth)
 					{
-						paramColor = InColor;
+						r.SetDepthBufferValue(fragment, newDepth);
+					}
+					else
+					{
+						// 이미 앞에 무언가 그려져있으므로 픽셀그리기는 생략
+						continue;
 					}
 
-					// 버텍스 컬러 또는 텍스쳐 매핑으로 최종 보간된 색상
-					LinearColor fragmentColor = LinearColor::White;
-					if (InFillMode & FillMode::Color)
+					if (IsDepthBufferDrawing())
 					{
-						fragmentColor = (InVertices[0].Color * oneMinusST * invZ0 + InVertices[1].Color * s * invZ1 + InVertices[2].Color * t * invZ2) * invZ;
-					}
+						// 시각화를 위해 선형화된 흑백 값
+						float grayScale = (invZ - n) / (f - n);
 
-					if (InFillMode & FillMode::Texture)
+						// 뎁스 버퍼 그리기
+						r.DrawPoint(fragment, LinearColor::White * grayScale);
+					}
+					else
 					{
-						// 투영보정보간으로 보간한 해당 픽셀의 UV 값
-						Vector2 targetUV = (InVertices[0].UV * oneMinusST * invZ0 + InVertices[1].UV * s * invZ1 + InVertices[2].UV * t * invZ2) * invZ;
+						// 색상 파라미터가 설정 안된 경우에는 흰색을 사용
+						LinearColor paramColor = LinearColor::White;
+						if (InColor != LinearColor::Error)
+						{
+							paramColor = InColor;
+						}
 
-						// 텍스쳐 매핑 진행
-						LinearColor textureColor = g.GetTexture(GameEngine::DiffuseTexture).GetSample(targetUV);
-						fragmentColor = fragmentColor * textureColor;
+						// 버텍스 컬러 또는 텍스쳐 매핑으로 최종 보간된 색상
+						LinearColor fragmentColor = LinearColor::White;
+						if (InFillMode & FillMode::Color)
+						{
+							fragmentColor = (InVertices[0].Color * oneMinusST * invZ0 + InVertices[1].Color * s * invZ1 + InVertices[2].Color * t * invZ2) * invZ;
+						}
+
+						if (InFillMode & FillMode::Texture)
+						{
+							// 투영보정보간으로 보간한 해당 픽셀의 UV 값
+							Vector2 targetUV = (InVertices[0].UV * oneMinusST * invZ0 + InVertices[1].UV * s * invZ1 + InVertices[2].UV * t * invZ2) * invZ;
+
+							// 텍스쳐 매핑 진행
+							LinearColor textureColor = g.GetTexture(GameEngine::DiffuseTexture).GetSample(targetUV);
+							fragmentColor = fragmentColor * textureColor;
+						}
+
+						r.DrawPoint(fragment, FragmentShader3D(fragmentColor, paramColor));
 					}
-
-					r.DrawPoint(fragment, FragmentShader3D(fragmentColor, paramColor));
 				}
 			}
 		}

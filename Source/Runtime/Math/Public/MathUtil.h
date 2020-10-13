@@ -5,99 +5,98 @@ namespace CK
 
 struct Math
 {
-	static const float PI;
-	static const float TwoPI;
-	static const float HalfPI;
-	static const float InvPI;
-	static const int IntMin;
-	static const int IntMax;
-	static const std::string InvalidHashName;
+	static constexpr float PI = { 3.14159265358979323846f };
+	static constexpr float TwoPI = { 2.f * PI };
+	static constexpr float HalfPI = { 1.57079632679f };
+	static constexpr float InvPI = { 0.31830988618f };
+	static constexpr char InvalidHashName[] = "!@CK_INVALIDHASH#$";
 	static const std::size_t InvalidHash;
 
-	static FORCEINLINE int TruncToInt(float InFloat)
+	FORCEINLINE static constexpr int TruncToInt(float InFloat)
 	{
 		return (int)InFloat;
 	}
 
-	static FORCEINLINE int RountToInt(float InFloat)
+	FORCEINLINE static constexpr int RountToInt(float InFloat)
 	{
 		return TruncToInt(roundf(InFloat));
 	}
 
-	static FORCEINLINE int FloorToInt(float InFloat)
+	FORCEINLINE static constexpr int FloorToInt(float InFloat)
 	{
 		return TruncToInt(floorf(InFloat));
 	}
 
-	static FORCEINLINE int CeilToInt(float InFloat)
+	FORCEINLINE static int CeilToInt(float InFloat)
 	{
 		return TruncToInt(ceilf(InFloat));
 	}
 
-	static FORCEINLINE bool EqualsInTolerance(float InFloat1, float InFloat2, float InTolerance = SMALL_NUMBER)
+	FORCEINLINE static constexpr bool EqualsInTolerance(float InFloat1, float InFloat2, float InTolerance = SMALL_NUMBER)
 	{
 		return Math::Abs(InFloat1 - InFloat2) <= InTolerance;
 	}
 
 	template< class T>
-	static FORCEINLINE T Lerp(const T& InSrc, const T& InDest, float InAlpha)
+	FORCEINLINE static constexpr T Lerp(const T& InSrc, const T& InDest, float InAlpha)
 	{
 		return (T)(InSrc + InAlpha * (InDest - InSrc));
 	}
 
 	template<class T>
-	static constexpr FORCEINLINE T Square(const T InNum)
+	FORCEINLINE static constexpr T Square(const T InNum)
 	{
 		return InNum * InNum;
 	}
 
-	static constexpr FORCEINLINE float Deg2Rad(float InDegree)
+	FORCEINLINE static constexpr float Deg2Rad(float InDegree)
 	{
 		return InDegree * PI / 180.f;
 	}
 
-	static constexpr FORCEINLINE float Rad2Deg(float InRadian)
+	FORCEINLINE static constexpr float Rad2Deg(float InRadian)
 	{
 		return InRadian * 180.f * InvPI;
 	}
 
 	template<class T>
-	static constexpr FORCEINLINE T Max(const T A, const T B)
+	FORCEINLINE static constexpr T Max(const T A, const T B)
 	{
 		return (A >= B) ? A : B;
 	}
 
 	template<class T>
-	static constexpr FORCEINLINE T Min(const T A, const T B)
+	FORCEINLINE static constexpr T Min(const T A, const T B)
 	{
 		return (A <= B) ? A : B;
 	}
 
 	template< class T >
-	static FORCEINLINE T Max3(const T A, const T B, const T C)
+	FORCEINLINE static T constexpr Max3(const T A, const T B, const T C)
 	{
 		return Max(Max(A, B), C);
 	}
 
 	template< class T >
-	static FORCEINLINE T Min3(const T A, const T B, const T C)
+	FORCEINLINE static T constexpr Min3(const T A, const T B, const T C)
 	{
 		return Min(Min(A, B), C);
 	}
 
 	template<class T>
-	static constexpr FORCEINLINE T Abs(const T A)
+	FORCEINLINE static constexpr T Abs(const T A)
 	{
 		return (A >= (T)0) ? A : -A;
 	}
 
 	template<class T>
-	static constexpr FORCEINLINE T Clamp(const T X, const T Min, const T Max)
+	FORCEINLINE static constexpr T Clamp(const T X, const T Min, const T Max)
 	{
 		return X < Min ? Min : X < Max ? X : Max;
 	}
 
-	static FORCEINLINE void GetSinCos(float& OutSin, float& OutCos, float InDegree)
+	// 언리얼 엔진 코드에서 가져옴. 지정된 각도에 대한 두 삼각함수를 함께 가져오는 함수. 
+	FORCEINLINE static constexpr void GetSinCos(float& OutSin, float& OutCos, float InDegree)
 	{
 		if (InDegree == 0.f)
 		{
@@ -123,7 +122,6 @@ struct Math
 		{
 			float rad = Math::Deg2Rad(InDegree);
 
-			// Copied from UE4 Source Code
 			// Map Value to y in [-pi,pi], x = 2*pi*quotient + remainder.
 			float quotient = (InvPI * 0.5f) * rad;
 			if (rad >= 0.0f)
@@ -137,7 +135,7 @@ struct Math
 			float y = rad - (2.0f * PI) * quotient;
 
 			// Map y to [-pi/2,pi/2] with sin(y) = sin(Value).
-			float sign;
+			float sign = 0.f;
 			if (y > HalfPI)
 			{
 				y = PI - y;
@@ -164,7 +162,7 @@ struct Math
 		}
 	}
 
-	static FORCEINLINE float FMod(float X, float Y)
+	FORCEINLINE static float FMod(float X, float Y)
 	{
 		if (fabsf(Y) <= SMALL_NUMBER)
 		{
@@ -182,7 +180,7 @@ struct Math
 	}
 
 	// 언리얼 엔진 코드에서 가져옴. 고속 역제곱근 공식
-	static FORCEINLINE float InvSqrt(float InFloat)
+	FORCEINLINE static float InvSqrt(float InFloat)
 	{
 		// Performs two passes of Newton-Raphson iteration on the hardware estimate
 		//    v^-0.5 = x
