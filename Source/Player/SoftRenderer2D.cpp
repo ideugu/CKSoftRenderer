@@ -43,6 +43,7 @@ void SoftRenderer::DrawGrid2D()
 
 // 실습을 위한 변수
 Vector2 deltaPosition;
+float rimPower = 3.f;
 
 // 게임 로직
 void SoftRenderer::Update2D(float InDeltaSeconds)
@@ -51,6 +52,8 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	const InputManager& input = g.GetInputManager();
 
 	static float moveSpeed = 100.f;
+
+	// 이동 벡터
 	deltaPosition = Vector2(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis)) * moveSpeed * InDeltaSeconds;
 }
 
@@ -63,25 +66,30 @@ void SoftRenderer::Render2D()
 	// 격자 그리기
 	DrawGrid2D();
 
-	static Vector2 centerPoint(100.f, 100.f);
+	static float radius = 100.f;
+	static float edge = 0.4f;
+	static Vector2 centerPoint;
 	centerPoint += deltaPosition;
 
-	std::array<Vector2, 5> points = {
-		centerPoint,
-		centerPoint - Vector2(1.f, 0.f),
-		centerPoint + Vector2(1.f, 0.f),
-		centerPoint - Vector2(0.f, 1.f),
-		centerPoint + Vector2(0.f, 1.f)
-	};
-
-	for (const auto& p : points)
+	static float rr = radius * radius;
+	static float ee = edge * edge;
+	Vector2 minPos = centerPoint - Vector2::One * radius;
+	Vector2 maxPos = centerPoint + Vector2::One * radius;
+	for (float x = minPos.X; x <= maxPos.X; ++x)
 	{
-		r.DrawPoint(p, LinearColor::Black);
+		for (float y = minPos.Y; y <= maxPos.Y; ++y)
+		{
+			Vector2 target(x, y);
+			Vector2 distance = Vector2(x, y) - centerPoint;
+			float sizeSquared = distance.SizeSquared();
+			if (sizeSquared < rr)
+			{
+				float ratio = sizeSquared / rr;
+				float pRatio = (ratio > ee) ? powf(ratio, rimPower) : 0.f;
+				r.DrawPoint(target, LinearColor(0.f, pRatio, 1.f));
+			}
+		}
 	}
-
-	ScreenPoint screenPoint = ScreenPoint::ToScreenCoordinate(_ScreenSize, centerPoint);
-	r.PushStatisticText("Cartesian : " + centerPoint.ToString());
-	r.PushStatisticText("Screen : (" + std::to_string(screenPoint.X) + "," + std::to_string(screenPoint.Y) + ")");
 }
 
 void SoftRenderer::DrawMesh2D(const class DD::Mesh& InMesh, const Matrix3x3& InMatrix, const LinearColor& InColor)
