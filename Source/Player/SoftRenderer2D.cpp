@@ -43,7 +43,8 @@ void SoftRenderer::DrawGrid2D()
 
 // 실습을 위한 변수
 Vector2 deltaPosition;
-float currentScale = 1.f;
+float deltaDegree = 0.f;
+float currentScale = 10.f;
 
 // 게임 로직
 void SoftRenderer::Update2D(float InDeltaSeconds)
@@ -53,22 +54,11 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 
 	// 게임 로직에만 사용하는 변수
 	static float moveSpeed = 100.f;
-	static float scaleMin = 10.f;
-	static float scaleMax = 15.f;
-	static float duration = 1.5f;
-	static float elapsedTime = 0.f;
-
-	// 경과 시간과 사인 함수를 활용한 [0,1]값의 생성
-	elapsedTime += InDeltaSeconds;
-	elapsedTime = Math::FMod(elapsedTime, duration);
-	float currentRad = (elapsedTime / duration) * Math::TwoPI;
-	float alpha = (sinf(currentRad) + 1) * 0.5f;
-
-	// [0,1]을 활용해 현재 스케일 값을 계산
-	currentScale = Math::Lerp(scaleMin, scaleMax, alpha);
+	static float rotateSpeed = 180.f;
 
 	// 입력 값으로 데이터 변경
 	deltaPosition = Vector2(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis)) * moveSpeed * InDeltaSeconds;
+	deltaDegree = input.GetAxis(InputAxis::WAxis) * rotateSpeed * InDeltaSeconds;
 }
 
 // 렌더링 로직
@@ -82,7 +72,9 @@ void SoftRenderer::Render2D()
 
 	// 렌더링 관련 변수
 	static Vector2 currentPosition;
+	static float currentDegree;
 	currentPosition += deltaPosition;
+	currentDegree += deltaDegree;
 
 	// 하트를 구성하는 점 생성
 	static float increment = 0.001f;
@@ -108,14 +100,26 @@ void SoftRenderer::Render2D()
 	HSVColor hsv(0.f, 1.f, 0.85f);  
 	for (auto const& v : hearts)
 	{
+		// 각도에 해당하는 사인과 코사인 함수 얻기
+		float sin = 0.f, cos = 0.f;
+		Math::GetSinCos(sin, cos, currentDegree);
+
+		// 1. 벡터의 크기를 적용
+		Vector2 target = v * currentScale;
+		// 2. 지정한 각도로 회전한 벡터의 계산
+		Vector2 rotatedTarget = Vector2(target.X * cos - target.Y * sin, target.X * sin + target.Y * cos);
+		// 3. 이동한 위치를 적용
+		rotatedTarget += currentPosition;
+
 		hsv.H = rad / Math::TwoPI;
-		r.DrawPoint(v * currentScale + currentPosition, hsv.ToLinearColor());
+		r.DrawPoint(rotatedTarget, hsv.ToLinearColor());
 		rad += increment;
 	}
 
-	// 현재 위치와 스케일을 화면에 출력
+	// 현재 위치, 스케일, 회전각을 화면에 출력
 	r.PushStatisticText(std::string("Position : ") + currentPosition.ToString());
 	r.PushStatisticText(std::string("Scale : ") + std::to_string(currentScale));
+	r.PushStatisticText(std::string("Degree : ") + std::to_string(currentDegree));
 }
 
 void SoftRenderer::DrawMesh2D(const class DD::Mesh& InMesh, const Matrix3x3& InMatrix, const LinearColor& InColor)
