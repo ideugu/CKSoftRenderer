@@ -54,13 +54,21 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	// 게임 로직에만 사용하는 변수
 	static float moveSpeed = 100.f;
 	static float scaleMin = 10.f;
-	static float scaleMax = 20.f;
-	static float scaleSpeed = 20.f;
+	static float scaleMax = 15.f;
+	static float duration = 1.5f;
+	static float elapsedTime = 0.f;
 
-	// 엔진 모듈에서 입력 관리자 가져오기
+	// 경과 시간과 사인 함수를 활용한 [0,1]값의 생성
+	elapsedTime += InDeltaSeconds;
+	elapsedTime = Math::FMod(elapsedTime, duration);
+	float currentRad = (elapsedTime / duration) * Math::TwoPI;
+	float alpha = (sinf(currentRad) + 1) * 0.5f;
+
+	// [0,1]을 활용해 현재 스케일 값을 계산
+	currentScale = Math::Lerp(scaleMin, scaleMax, alpha);
+
+	// 입력 값으로 데이터 변경
 	deltaPosition = Vector2(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis)) * moveSpeed * InDeltaSeconds;
-	float deltaScale = input.GetAxis(InputAxis::ZAxis) * scaleSpeed * InDeltaSeconds;
-	currentScale = Math::Clamp(currentScale + deltaScale, scaleMin, scaleMax);
 }
 
 // 렌더링 로직
@@ -95,9 +103,14 @@ void SoftRenderer::Render2D()
 		}
 	}
 
+	// 각 값을 초기화한 후 동일하게 증가시키면서 색상 값을 지정
+	rad = 0.f;
+	HSVColor hsv(0.f, 1.f, 0.85f);  
 	for (auto const& v : hearts)
 	{
-		r.DrawPoint(v * currentScale + currentPosition, LinearColor::Blue);
+		hsv.H = rad / Math::TwoPI;
+		r.DrawPoint(v * currentScale + currentPosition, hsv.ToLinearColor());
+		rad += increment;
 	}
 
 	// 현재 위치와 스케일을 화면에 출력
