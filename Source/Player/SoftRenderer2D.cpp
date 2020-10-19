@@ -43,7 +43,8 @@ void SoftRenderer::DrawGrid2D()
 
 // 실습을 위한 변수
 Vector2 deltaPosition;
-float currentScale = 1.f;
+float deltaDegree = 0.f;
+float currentScale = 10.f;
 
 // 게임 로직
 void SoftRenderer::Update2D(float InDeltaSeconds)
@@ -56,11 +57,13 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	static float scaleMin = 10.f;
 	static float scaleMax = 20.f;
 	static float scaleSpeed = 20.f;
+	static float rotateSpeed = 180.f;
 
-	// 입력 값에 따라 위치와 크기 변경하기
+	// 입력 값으로 데이터 변경
 	deltaPosition = Vector2(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis)) * moveSpeed * InDeltaSeconds;
 	float deltaScale = input.GetAxis(InputAxis::ZAxis) * scaleSpeed * InDeltaSeconds;
 	currentScale = Math::Clamp(currentScale + deltaScale, scaleMin, scaleMax);
+	deltaDegree = input.GetAxis(InputAxis::WAxis) * rotateSpeed * InDeltaSeconds;
 }
 
 // 렌더링 로직
@@ -74,7 +77,9 @@ void SoftRenderer::Render2D()
 
 	// 렌더링 관련 변수
 	static Vector2 currentPosition;
+	static float currentDegree;
 	currentPosition += deltaPosition;
+	currentDegree += deltaDegree;
 
 	// 하트를 구성하는 점 생성
 	static float increment = 0.001f;
@@ -95,14 +100,42 @@ void SoftRenderer::Render2D()
 		}
 	}
 
+	// 회전 변환의 생성을 위한 삼각함수 계산
+	float sin = 0.f, cos = 0.f;
+	Math::GetSinCos(sin, cos, currentDegree);
+
+	// 회전 행렬의 기저 벡터와 행렬
+	Vector2 rBasis1(cos, sin);
+	Vector2 rBasis2(-sin, cos);
+	Matrix2x2 rMatrix(rBasis1, rBasis2);
+
+	// 크기 행렬의 기저 벡터와 행렬
+	Vector2 sBasis1 = Vector2::UnitX * currentScale;
+	Vector2 sBasis2 = Vector2::UnitY * currentScale;
+	Matrix2x2 sMatrix(sBasis1, sBasis2);
+
+	// 크기 행렬과 회전 행렬의 순으로 합성
+	Matrix2x2 finalMatrix = rMatrix * sMatrix;
+
+	// 각 값을 초기화한 후 동일하게 증가시키면서 색상 값을 지정
+	rad = 0.f;
+	HSVColor hsv(0.f, 1.f, 0.85f);  
 	for (auto const& v : hearts)
 	{
-		r.DrawPoint(v * currentScale + currentPosition, LinearColor::Blue);
+		// 1. 크기와 회전을 동시에 적용
+		Vector2 target = finalMatrix * v;
+		// 2. 이동한 위치를 적용
+		target += currentPosition;
+
+		hsv.H = rad / Math::TwoPI;
+		r.DrawPoint(target, hsv.ToLinearColor());
+		rad += increment;
 	}
 
-	// 현재 위치와 스케일을 화면에 출력
+	// 현재 위치, 스케일, 회전각을 화면에 출력
 	r.PushStatisticText(std::string("Position : ") + currentPosition.ToString());
 	r.PushStatisticText(std::string("Scale : ") + std::to_string(currentScale));
+	r.PushStatisticText(std::string("Degree : ") + std::to_string(currentDegree));
 }
 
 void SoftRenderer::DrawMesh2D(const class DD::Mesh& InMesh, const Matrix3x3& InMatrix, const LinearColor& InColor)
