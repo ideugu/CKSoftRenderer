@@ -96,7 +96,50 @@ struct Math
 	}
 
 	// 언리얼 엔진 코드에서 가져옴. 지정된 각도에 대한 두 삼각함수를 함께 가져오는 함수. 
-	FORCEINLINE static constexpr void GetSinCos(float& OutSin, float& OutCos, float InDegree)
+	static FORCEINLINE constexpr void GetSinCosRad(float& OutSin, float& OutCos, float InRadian)
+	{
+		// Copied from UE4 Source Code
+		// Map Value to y in [-pi,pi], x = 2*pi*quotient + remainder.
+		float quotient = (InvPI * 0.5f) * InRadian;
+		if (InRadian >= 0.0f)
+		{
+			quotient = (float)((int)(quotient + 0.5f));
+		}
+		else
+		{
+			quotient = (float)((int)(quotient - 0.5f));
+		}
+		float y = InRadian - (2.0f * PI) * quotient;
+
+		// Map y to [-pi/2,pi/2] with sin(y) = sin(Value).
+		float sign = 0.f;
+		if (y > HalfPI)
+		{
+			y = PI - y;
+			sign = -1.0f;
+		}
+		else if (y < -HalfPI)
+		{
+			y = -PI - y;
+			sign = -1.0f;
+		}
+		else
+		{
+			sign = +1.0f;
+		}
+
+		float y2 = y * y;
+
+		// 11-degree minimax approximation
+		OutSin = (((((-2.3889859e-08f * y2 + 2.7525562e-06f) * y2 - 0.00019840874f) * y2 + 0.0083333310f) * y2 - 0.16666667f) * y2 + 1.0f) * y;
+
+		// 10-degree minimax approximation
+		float p = ((((-2.6051615e-07f * y2 + 2.4760495e-05f) * y2 - 0.0013888378f) * y2 + 0.041666638f) * y2 - 0.5f) * y2 + 1.0f;
+		OutCos = sign * p;
+	}
+
+
+	static FORCEINLINE constexpr void GetSinCos(float& OutSin, float& OutCos, float InDegree)
 	{
 		if (InDegree == 0.f)
 		{
@@ -120,45 +163,7 @@ struct Math
 		}
 		else
 		{
-			float rad = Math::Deg2Rad(InDegree);
-
-			// Map Value to y in [-pi,pi], x = 2*pi*quotient + remainder.
-			float quotient = (InvPI * 0.5f) * rad;
-			if (rad >= 0.0f)
-			{
-				quotient = (float)((int)(quotient + 0.5f));
-			}
-			else
-			{
-				quotient = (float)((int)(quotient - 0.5f));
-			}
-			float y = rad - (2.0f * PI) * quotient;
-
-			// Map y to [-pi/2,pi/2] with sin(y) = sin(Value).
-			float sign = 0.f;
-			if (y > HalfPI)
-			{
-				y = PI - y;
-				sign = -1.0f;
-			}
-			else if (y < -HalfPI)
-			{
-				y = -PI - y;
-				sign = -1.0f;
-			}
-			else
-			{
-				sign = +1.0f;
-			}
-
-			float y2 = y * y;
-
-			// 11-degree minimax approximation
-			OutSin = (((((-2.3889859e-08f * y2 + 2.7525562e-06f) * y2 - 0.00019840874f) * y2 + 0.0083333310f) * y2 - 0.16666667f) * y2 + 1.0f) * y;
-
-			// 10-degree minimax approximation
-			float p = ((((-2.6051615e-07f * y2 + 2.4760495e-05f) * y2 - 0.0013888378f) * y2 + 0.041666638f) * y2 - 0.5f) * y2 + 1.0f;
-			OutCos = sign * p;
+			GetSinCosRad(OutSin, OutCos, Math::Deg2Rad(InDegree));
 		}
 	}
 
