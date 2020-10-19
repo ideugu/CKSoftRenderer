@@ -43,7 +43,7 @@ void SoftRenderer::DrawGrid2D()
 
 // 실습을 위한 변수
 Vector2 deltaPosition;
-float rimPower = 3.f;
+float currentScale = 1.f;
 
 // 게임 로직
 void SoftRenderer::Update2D(float InDeltaSeconds)
@@ -51,10 +51,16 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	auto& g = Get2DGameEngine();
 	const InputManager& input = g.GetInputManager();
 
+	// 게임 로직에만 사용하는 변수
 	static float moveSpeed = 100.f;
+	static float scaleMin = 10.f;
+	static float scaleMax = 20.f;
+	static float scaleSpeed = 20.f;
 
-	// 이동 벡터
+	// 엔진 모듈에서 입력 관리자 가져오기
 	deltaPosition = Vector2(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis)) * moveSpeed * InDeltaSeconds;
+	float deltaScale = input.GetAxis(InputAxis::ZAxis) * scaleSpeed * InDeltaSeconds;
+	currentScale = Math::Clamp(currentScale + deltaScale, scaleMin, scaleMax);
 }
 
 // 렌더링 로직
@@ -66,30 +72,37 @@ void SoftRenderer::Render2D()
 	// 격자 그리기
 	DrawGrid2D();
 
-	static float radius = 100.f;
-	static float edge = 0.4f;
-	static Vector2 centerPoint;
-	centerPoint += deltaPosition;
+	// 렌더링 관련 변수
+	static Vector2 currentPosition;
+	currentPosition += deltaPosition;
 
-	static float rr = radius * radius;
-	static float ee = edge * edge;
-	Vector2 minPos = centerPoint - Vector2::One * radius;
-	Vector2 maxPos = centerPoint + Vector2::One * radius;
-	for (float x = minPos.X; x <= maxPos.X; ++x)
+	// 하트를 구성하는 점 생성
+	static float increment = 0.001f;
+	float rad = 0.f;
+	static std::vector<Vector2> hearts;
+	if (hearts.empty())
 	{
-		for (float y = minPos.Y; y <= maxPos.Y; ++y)
+		for (rad = 0.f; rad < Math::TwoPI; rad += increment)
 		{
-			Vector2 target(x, y);
-			Vector2 distance = Vector2(x, y) - centerPoint;
-			float sizeSquared = distance.SizeSquared();
-			if (sizeSquared < rr)
-			{
-				float ratio = sizeSquared / rr;
-				float pRatio = (ratio > ee) ? powf(ratio, rimPower) : 0.f;
-				r.DrawPoint(target, LinearColor(0.f, pRatio, 1.f));
-			}
+			float sin = sinf(rad);
+			float cos = cosf(rad);
+			float cos2 = cosf(2 * rad);
+			float cos3 = cosf(3 * rad);
+			float cos4 = cosf(4 * rad);
+			float x = 16.f * sin * sin * sin;
+			float y = 13 * cos - 5 * cos2 - 2 * cos3 - cos4;
+			hearts.push_back(Vector2(x, y));
 		}
 	}
+
+	for (auto const& v : hearts)
+	{
+		r.DrawPoint(v * currentScale + currentPosition, LinearColor::Blue);
+	}
+
+	// 현재 위치와 스케일을 화면에 출력
+	r.PushStatisticText(std::string("Position : ") + currentPosition.ToString());
+	r.PushStatisticText(std::string("Scale : ") + std::to_string(currentScale));
 }
 
 void SoftRenderer::DrawMesh2D(const class DD::Mesh& InMesh, const Matrix3x3& InMatrix, const LinearColor& InColor)
