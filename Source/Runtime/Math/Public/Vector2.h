@@ -34,6 +34,8 @@ public:
 	FORCEINLINE constexpr float Dot(const Vector2& InVector) const;
 	FORCEINLINE float Angle() const;
 	FORCEINLINE float AngleInDegree() const;
+	FORCEINLINE Vector2 ToPolarCoordinate() const;
+	FORCEINLINE constexpr Vector2 ToCartesianCoordinate() const;
 
 	std::string ToString() const;
 
@@ -176,6 +178,18 @@ FORCEINLINE float Vector2::Angle() const
 FORCEINLINE float Vector2::AngleInDegree() const
 {
 	return Math::Rad2Deg(atan2f(Y, X));
+}
+
+FORCEINLINE Vector2 Vector2::ToPolarCoordinate() const
+{
+	return Vector2(Size(), Angle());
+}
+
+FORCEINLINE constexpr Vector2 Vector2::ToCartesianCoordinate() const
+{
+	float sin = 0.f, cos = 0.f;
+	Math::GetSinCosRad(sin, cos, Y);
+	return Vector2(X * cos, X * sin);
 }
 
 }
