@@ -100,19 +100,27 @@ void SoftRenderer::Render2D()
 	HSVColor hsv(0.f, 1.f, 0.85f);  
 	for (auto const& v : hearts)
 	{
-		// 각도에 해당하는 사인과 코사인 함수 얻기
-		float sin = 0.f, cos = 0.f;
+		float sin, cos;
 		Math::GetSinCos(sin, cos, currentDegree);
-
-		// 1. 벡터의 크기를 적용
+		float halfScreenX = _ScreenSize.X * 0.5f;
+		float halfScreenY = _ScreenSize.Y * 0.5f;
 		Vector2 target = v * currentScale;
-		// 2. 지정한 각도로 회전한 벡터의 계산
-		Vector2 rotatedTarget = Vector2(target.X * cos - target.Y * sin, target.X * sin + target.Y * cos);
-		// 3. 이동한 위치를 적용
-		rotatedTarget += currentPosition;
+
+		// 화면의 중심을 기준으로 현재 벡터를 정규화
+		Vector2 ndc = Vector2(target.X / halfScreenX, target.Y / halfScreenY);
+		float len = Vector2(ndc.X * _ScreenSize.Y / _ScreenSize.X, ndc.Y).Size();
+
+		// 극좌표계로 변경한 후 원점에서 멀어질 수록 더욱 회전 가중치를 부여.
+		Vector2 polarNdc = ndc.ToPolarCoordinate();
+		float w = Math::Lerp(0.f, 5.f, len);
+		polarNdc.Y += Math::Deg2Rad(currentDegree) * w;
+
+		// 변환된 결과를 다시 데카르트 좌표계로 변환
+		target = polarNdc.ToCartesianCoordinate();
+		target = Vector2(target.X * halfScreenX, target.Y * halfScreenY);
 
 		hsv.H = rad / Math::TwoPI;
-		r.DrawPoint(rotatedTarget, hsv.ToLinearColor());
+		r.DrawPoint(target + currentPosition, hsv.ToLinearColor());
 		rad += increment;
 	}
 
