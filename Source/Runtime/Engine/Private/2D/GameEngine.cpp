@@ -107,31 +107,6 @@ bool GameEngine::LoadResources()
 
 bool GameEngine::LoadScene()
 {
-	// 플레이어
-	constexpr float playerScale = 20.f;
-	constexpr float squareScale = 10.f;
-
-	GameObject& goPlayer = CreateNewGameObject(GameEngine::PlayerGo);
-	goPlayer.SetMesh(GameEngine::QuadMesh);
-	goPlayer.GetTransform().SetScale(Vector2::One * playerScale);
-	goPlayer.SetColor(LinearColor::Red);
-
-	// 고정 시드로 랜덤하게 생성
-	std::mt19937 generator(0);
-	std::uniform_real_distribution<float> dist(-1000.f, 1000.f);
-
-	// 100개의 배경 게임 오브젝트 생성
-	char name[64];
-	for (int i = 0; i < 100; ++i)
-	{
-		std::snprintf(name, sizeof(name), "GameObject%d", i);
-		GameObject& newGo = CreateNewGameObject(name);
-		newGo.GetTransform().SetPosition(Vector2(dist(generator), dist(generator)));
-		newGo.GetTransform().SetScale(Vector2::One * squareScale);
-		newGo.SetMesh(GameEngine::QuadMesh);
-		newGo.SetColor(LinearColor::Blue);
-	}
-
 	return true;
 }
 
