@@ -57,7 +57,7 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	static float scaleMax = 20.f;
 	static float scaleSpeed = 20.f;
 
-	// 엔진 모듈에서 입력 관리자 가져오기
+	// 입력 값에 따라 위치와 크기 변경하기
 	deltaPosition = Vector2(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis)) * moveSpeed * InDeltaSeconds;
 	float deltaScale = input.GetAxis(InputAxis::ZAxis) * scaleSpeed * InDeltaSeconds;
 	currentScale = Math::Clamp(currentScale + deltaScale, scaleMin, scaleMax);
