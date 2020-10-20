@@ -42,7 +42,7 @@ void SoftRenderer::DrawGrid2D()
 }
 
 // 실습을 위한 변수
-Vector2 deltaPosition;
+float deltaShear = 0.f;
 float deltaDegree = 0.f;
 float currentScale = 10.f;
 
@@ -53,17 +53,18 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	const InputManager& input = g.GetInputManager();
 
 	// 게임 로직에만 사용하는 변수
-	static float moveSpeed = 100.f;
-	static float scaleMin = 10.f;
-	static float scaleMax = 20.f;
-	static float scaleSpeed = 20.f;
+	static float shearSpeed = 2.f;
+	static float scaleMin = 5.f;
+	static float scaleMax = 10.f;
+	static float scaleSpeed = 10.f;
 	static float rotateSpeed = 180.f;
 
 	// 입력 값으로 데이터 변경
-	deltaPosition = Vector2(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis)) * moveSpeed * InDeltaSeconds;
-	float deltaScale = input.GetAxis(InputAxis::ZAxis) * scaleSpeed * InDeltaSeconds;
-	currentScale = Math::Clamp(currentScale + deltaScale, scaleMin, scaleMax);
+	deltaShear = input.GetAxis(InputAxis::XAxis) * shearSpeed * InDeltaSeconds;
 	deltaDegree = input.GetAxis(InputAxis::WAxis) * rotateSpeed * InDeltaSeconds;
+	float deltaScale = input.GetAxis(InputAxis::ZAxis) * scaleSpeed * InDeltaSeconds;
+
+	currentScale = Math::Clamp(currentScale + deltaScale, scaleMin, scaleMax);
 }
 
 // 렌더링 로직
@@ -76,9 +77,9 @@ void SoftRenderer::Render2D()
 	DrawGrid2D();
 
 	// 렌더링 관련 변수
-	static Vector2 currentPosition;
-	static float currentDegree;
-	currentPosition += deltaPosition;
+	static float currentShear = 0.f;
+	static float currentDegree = 0.f;
+	currentShear += deltaShear;
 	currentDegree += deltaDegree;
 
 	// 하트를 구성하는 점 생성
@@ -100,40 +101,67 @@ void SoftRenderer::Render2D()
 		}
 	}
 
-	// 회전 변환의 생성을 위한 삼각함수 계산
-	float sin = 0.f, cos = 0.f;
-	Math::GetSinCos(sin, cos, currentDegree);
+	static const Vector2 pivot(200.f, 0.f);
 
-	// 회전 행렬의 기저 벡터와 행렬
+	// 크기 행렬
+	Vector2 sBasis1(currentScale, 0.f);
+	Vector2 sBasis2(0.f, currentScale);
+	Matrix2x2 sMatrix(sBasis1, sBasis2);
+
+	// 회전 행렬
+	float sin, cos;
+	Math::GetSinCos(sin, cos, currentDegree);
 	Vector2 rBasis1(cos, sin);
 	Vector2 rBasis2(-sin, cos);
 	Matrix2x2 rMatrix(rBasis1, rBasis2);
 
-	// 크기 행렬의 기저 벡터와 행렬
-	Vector2 sBasis1 = Vector2::UnitX * currentScale;
-	Vector2 sBasis2 = Vector2::UnitY * currentScale;
-	Matrix2x2 sMatrix(sBasis1, sBasis2);
+	// 밀기 행렬
+	Vector2 shBasis1 = Vector2::UnitX;
+	Vector2 shBasis2(currentShear, 1.f);
+	Matrix2x2 shMatrix(shBasis1, shBasis2);
 
-	// 크기 행렬과 회전 행렬의 순으로 합성
-	Matrix2x2 finalMatrix = rMatrix * sMatrix;
+	// 합성 행렬
+	Matrix2x2 cMatrix = shMatrix * rMatrix * sMatrix;
+
+
+	// 크기 행렬의 역행렬
+	float invScale = 1.f / currentScale;
+	Vector2 isBasis1(invScale, 0.f);
+	Vector2 isBasis2(0.f, invScale);
+	Matrix2x2 isMatrix(isBasis1, isBasis2);
+
+	// 회전 행렬의 역행렬
+	Vector2 irBasis1(cos, -sin);
+	Vector2 irBasis2(sin, cos);
+	Matrix2x2 irMatrix(irBasis1, irBasis2);
+
+	// 밀기 행렬의 역행렬
+	Vector2 ishBasis1 = Vector2::UnitX;
+	Vector2 ishBasis2(-currentShear, 1.f);
+	Matrix2x2 ishMatrix(ishBasis1, ishBasis2);
+
+	// 역행렬의 합성행렬. ( 역순으로 조합하기 )
+	Matrix2x2 icMatrix = isMatrix * irMatrix * ishMatrix;
 
 	// 각 값을 초기화한 후 동일하게 증가시키면서 색상 값을 지정
 	rad = 0.f;
 	HSVColor hsv(0.f, 1.f, 0.85f);  
 	for (auto const& v : hearts)
 	{
-		// 1. 크기와 회전을 동시에 적용
-		Vector2 target = finalMatrix * v;
-		// 2. 이동한 위치를 적용
-		target += currentPosition;
+		// 왼쪽 하트 ( 변환 행렬을 적용하기 )
+		Vector2 left = cMatrix * v;
+		r.DrawPoint(left - pivot, hsv.ToLinearColor());
+
+		// 오른쪽 하트 ( 변환 값에 역행렬을 적용하기 )
+		Vector2 right = icMatrix * left;
+		r.DrawPoint(right + pivot, hsv.ToLinearColor());
 
 		hsv.H = rad / Math::TwoPI;
-		r.DrawPoint(target, hsv.ToLinearColor());
 		rad += increment;
 	}
 
-	// 현재 위치, 스케일, 회전각을 화면에 출력
-	r.PushStatisticText(std::string("Position : ") + currentPosition.ToString());
+	// 현재 밀기, 스케일, 회전각을 화면에 출력
+	r.PushStatisticText(std::string("Shear : ") + std::to_string(currentShear));
 	r.PushStatisticText(std::string("Scale : ") + std::to_string(currentScale));
 	r.PushStatisticText(std::string("Degree : ") + std::to_string(currentDegree));
 }
