@@ -72,7 +72,7 @@ void SoftRenderer::Render2D()
 
 	// 렌더링 관련 변수
 	static Vector2 currentPosition;
-	static float currentDegree;
+	static float currentDegree = 0.f;
 	currentPosition += deltaPosition;
 	currentDegree += deltaDegree;
 
