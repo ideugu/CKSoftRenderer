@@ -100,15 +100,15 @@ bool WindowsRSI::CohenSutherlandLineClip(Vector2& InOutStartPos, Vector2& InOutE
 
 	while (true)
 	{
-		if ((startTest == 0) && (endTest == 0))
+		if ((startTest == 0) && (endTest == 0)) // 화면 안에 두 점이 있으면 바로 그리기
 		{
 			return true;
 		}
-		else if (startTest & endTest)
+		else if (startTest & endTest) // 화면 밖에 선이 있으므로 그릴 필요가 없음
 		{
 			return false;
 		}
-		else
+		else // 양쪽을 조사해 클리핑 진행
 		{
 			Vector2 clippedPosition;
 			bool isStartTest = (startTest != 0);
@@ -156,6 +156,7 @@ bool WindowsRSI::CohenSutherlandLineClip(Vector2& InOutStartPos, Vector2& InOutE
 				}
 			}
 
+			// 클리핑한 결과로 다시 테스트 진행.
 			if (isStartTest)
 			{
 				InOutStartPos = clippedPosition;

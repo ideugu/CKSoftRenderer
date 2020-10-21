@@ -51,7 +51,7 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	const InputManager& input = g.GetInputManager();
 
 	// 게임 로직에만 사용하는 변수
-	static float duration = 3.f;
+	static float duration = 20.f;
 	static float elapsedTime = 0.f;
 
 	// 경과 시간에 따른 현재 각과 이를 사용한 [0,1]값의 생성
@@ -61,7 +61,7 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	float alpha = (sinf(currentRad) + 1) * 0.5f;
 
 	// [0,1]을 활용해 주기적으로 크기를 반복하기
-	currentDegree = Math::Lerp(0.f, 360.f, alpha);
+	currentDegree = Math::Lerp(0.f, 180.f, alpha);
 }
 
 // 렌더링 로직
@@ -88,7 +88,7 @@ void SoftRenderer::Render2D()
 	Vector2 s = (rMatrix * sp).ToVector2();
 	Vector2 e = (rMatrix * ep).ToVector2();
 	HSVColor hsv(0.f, 1.f, 0.85f); // 잘 보이도록 채도를 조금만 줄였음. 
-	hsv.H = currentDegree / 360.f;
+	hsv.H = currentDegree / 180.f;
 	r.DrawLine(s, e, hsv.ToLinearColor());
 
 	r.PushStatisticText(std::string("Rotation : ") + std::to_string(currentDegree));
