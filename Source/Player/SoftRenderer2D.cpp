@@ -100,32 +100,36 @@ void SoftRenderer::Render2D()
 		}
 	}
 
-	// 회전 변환의 생성을 위한 삼각함수 계산
+	// 아핀 변환 행렬 ( 크기 ) 
+	Vector3 sBasis1(currentScale, 0.f, 0.f);
+	Vector3 sBasis2(0.f, currentScale, 0.f);
+	Vector3 sBasis3 = Vector3::UnitZ;
+	Matrix3x3 sMatrix(sBasis1, sBasis2, sBasis3);
+
+	// 아핀 변환 행렬 ( 회전 ) 
 	float sin = 0.f, cos = 0.f;
 	Math::GetSinCos(sin, cos, currentDegree);
+	Vector3 rBasis1(cos, sin, 0.f);
+	Vector3 rBasis2(-sin, cos, 0.f);
+	Vector3 rBasis3 = Vector3::UnitZ;
+	Matrix3x3 rMatrix(rBasis1, rBasis2, rBasis3);
 
-	// 회전 행렬의 기저 벡터와 행렬
-	Vector2 rBasis1(cos, sin);
-	Vector2 rBasis2(-sin, cos);
-	Matrix2x2 rMatrix(rBasis1, rBasis2);
+	// 아핀 변환 행렬 ( 이동 ) 
+	Vector3 tBasis1 = Vector3::UnitX;
+	Vector3 tBasis2 = Vector3::UnitY;
+	Vector3 tBasis3(currentPosition.X, currentPosition.Y, 1.f);
+	Matrix3x3 tMatrix(tBasis1, tBasis2, tBasis3);
 
-	// 크기 행렬의 기저 벡터와 행렬
-	Vector2 sBasis1 = Vector2::UnitX * currentScale;
-	Vector2 sBasis2 = Vector2::UnitY * currentScale;
-	Matrix2x2 sMatrix(sBasis1, sBasis2);
-
-	// 크기 행렬과 회전 행렬의 순으로 합성
-	Matrix2x2 finalMatrix = rMatrix * sMatrix;
+	// 모든 아핀 변환의 조합 행렬. 크기-회전-이동 순으로 조합
+	Matrix3x3 finalMatrix = tMatrix * rMatrix * sMatrix;
 
 	// 각 값을 초기화한 후 동일하게 증가시키면서 색상 값을 지정
 	rad = 0.f;
 	HSVColor hsv(0.f, 1.f, 0.85f);  
 	for (auto const& v : hearts)
 	{
-		// 1. 크기와 회전을 동시에 적용
+		// 아핀 변환을 적용하고 마지막 차원의 값을 제거하고 사용
 		Vector2 target = finalMatrix * v;
-		// 2. 이동한 위치를 적용
-		target += currentPosition;
 
 		hsv.H = rad / Math::TwoPI;
 		r.DrawPoint(target, hsv.ToLinearColor());
