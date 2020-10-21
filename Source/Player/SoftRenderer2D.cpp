@@ -61,7 +61,7 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	float alpha = (sinf(currentRad) + 1) * 0.5f;
 
 	// [0,1]을 활용해 주기적으로 크기를 반복하기
-	currentDegree = Math::Lerp(0.f, 44.9f, alpha);
+	currentDegree = Math::Lerp(0.f, 360.f, alpha);
 }
 
 // 렌더링 로직
@@ -77,25 +77,19 @@ void SoftRenderer::Render2D()
 	static Vector3 sp(-600.f, 0.f, 1.f);
 	static Vector3 ep(600.f, 0.f, 1.f);
 
-	float increment = 15.f;
+	// 아핀 변환 행렬 ( 회전 ) 
+	float sin, cos;
+	Math::GetSinCos(sin, cos, currentDegree);
+	Vector3 rBasis1(cos, sin, 0.f);
+	Vector3 rBasis2(-sin, cos, 0.f);
+	Vector3 rBasis3 = Vector3::UnitZ;
+	Matrix3x3 rMatrix(rBasis1, rBasis2, rBasis3);
+
+	Vector2 s = (rMatrix * sp).ToVector2();
+	Vector2 e = (rMatrix * ep).ToVector2();
 	HSVColor hsv(0.f, 1.f, 0.85f); // 잘 보이도록 채도를 조금만 줄였음. 
-	for (float deg = 0.f; deg < 360.f; deg += increment)
-	{
-		float targetAngle = deg + currentDegree;
-
-		// 아핀 변환 행렬 ( 회전 ) 
-		float sin, cos;
-		Math::GetSinCos(sin, cos, targetAngle);
-		Vector3 rBasis1(cos, sin, 0.f);
-		Vector3 rBasis2(-sin, cos, 0.f);
-		Vector3 rBasis3 = Vector3::UnitZ;
-		Matrix3x3 rMatrix(rBasis1, rBasis2, rBasis3);
-
-		Vector2 s = (rMatrix * sp).ToVector2();
-		Vector2 e = (rMatrix * ep).ToVector2();
-		hsv.H = targetAngle / 180.f;
-		r.DrawLine(s, e, hsv.ToLinearColor());
-	}
+	hsv.H = currentDegree / 360.f;
+	r.DrawLine(s, e, hsv.ToLinearColor());
 
 	r.PushStatisticText(std::string("Rotation : ") + std::to_string(currentDegree));
 }
