@@ -41,9 +41,14 @@ void SoftRenderer::DrawGrid2D()
 	r.DrawFullVerticalLine(worldOrigin.X, LinearColor::Green);
 }
 
+#include <random>
+
 // 실습을 위한 변수
+static std::random_device rd;
+static std::mt19937 mt(rd());
 float currentDegree = 0.f;
-Vector2 spherePosition = Vector2::Zero;
+Vector2 lineStart(-400.f, 10.f);
+Vector2 lineEnd(400.f, -10.f);
 
 // 게임 로직
 void SoftRenderer::Update2D(float InDeltaSeconds)
@@ -52,17 +57,20 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	const InputManager& input = g.GetInputManager();
 
 	// 게임 로직에만 사용하는 변수
-	static float duration = 20.f;
+	static float duration = 6.f;
 	static float elapsedTime = 0.f;
+	static float rotateSpeed = 180.f;
 
-	// 경과 시간에 따른 현재 각과 이를 사용한 [0,1]값의 생성
-	elapsedTime += InDeltaSeconds;
-	elapsedTime = Math::FMod(elapsedTime, duration);
-	float currentRad = (elapsedTime / duration) * Math::TwoPI;
-	float alpha = (sinf(currentRad) + 1) * 0.5f;
-
-	// [0,1]을 활용해 주기적으로 크기를 반복하기
-	currentDegree = Math::Lerp(0.f, 360.f, alpha);
+	elapsedTime = Math::Clamp(elapsedTime + InDeltaSeconds, 0.f, duration);
+	currentDegree = Math::FMod(currentDegree + rotateSpeed * InDeltaSeconds, 360.f);
+	if (elapsedTime == duration)
+	{
+		std::uniform_real_distribution<float>  randomY(-200.f, 200.f);
+		lineStart = Vector2(-400.f, randomY(mt));
+		lineEnd = Vector2(400.f, randomY(mt));
+		elapsedTime = 0.f;
+		return;
+	}
 }
 
 // 렌더링 로직
@@ -71,75 +79,57 @@ void SoftRenderer::Render2D()
 	auto& r = GetRenderer();
 	const auto& g = Get2DGameEngine();
 
-	// 조명 구체
-	static std::vector<Vector2> light;
-	if (light.empty())
+	// 점
+	static std::vector<Vector2> point;
+	if (point.empty())
 	{
-		float lightRadius = 10.f;
-		for (float x = -lightRadius; x <= lightRadius; ++x)
+		float radius = 5.f;
+		for (float x = -radius; x <= radius; ++x)
 		{
-			for (float y = -lightRadius; y <= lightRadius; ++y)
+			for (float y = -radius; y <= radius; ++y)
 			{
 				Vector2 target(x, y);
 				float sizeSquared = target.SizeSquared();
-				float rr = lightRadius * lightRadius;
+				float rr = radius * radius;
 				if (sizeSquared < rr)
 				{
-					light.push_back(target);
+					point.push_back(target);
 				}
 			}
 		}
 	}
 
-	// 조명을 적용할 구체
-	static std::vector<Vector2> sphere;
-	static float sphereRadius = 50.f;
-	if (sphere.empty())
-	{
-		for (float x = -sphereRadius; x <= sphereRadius; ++x)
-		{
-			for (float y = -sphereRadius; y <= sphereRadius; ++y)
-			{
-				Vector2 target(x, y);
-				float sizeSquared = target.SizeSquared();
-				float rr = sphereRadius * sphereRadius;
-				if (sizeSquared < rr)
-				{
-					sphere.push_back(target);
-				}
-			}
-		}
-	}
-
-	// 조명의 좌표 지정
+	// 점 그리기
 	float sin = 0.f, cos = 0.f;
-	static float lightLength = 200.f;
+	static float pointOrbit = 250.f;
 	Math::GetSinCos(sin, cos, currentDegree);
-	Vector2 lightPosition = Vector2(cos, sin) * lightLength;
-	static HSVColor hsv(0.f, 1.f, 1.f);
-
-	// 각에 따른 색상의 변화
-	hsv.H = Math::Deg2Rad(currentDegree) * Math::InvPI * 0.5f;
-
-	// 조명 그리기
-	LinearColor lightColor = hsv.ToLinearColor();
-	r.DrawLine(lightPosition, lightPosition - lightPosition.Normalize() * 50.f, lightColor);
-	for (auto const& v : light)
+	Vector2 pointPos = Vector2(cos, sin) * pointOrbit;
+	for (auto const& v : point)
 	{
-		r.DrawPoint(v + lightPosition, lightColor);
+		r.DrawPoint(v + pointPos, LinearColor::Red);
 	}
 
-	// 원을 구성하는 모든 픽셀에 NdotL을 계산해 음영을 산출하고 이를 최종 색상에 반영
-	for (auto const& v : sphere)
+	// 투영할 라인 그리기
+	r.DrawLine(lineStart, lineEnd, LinearColor::Black);
+
+	// 투영된 위치 그리기
+	Vector2 hatV = (lineEnd - lineStart).Normalize();
+	Vector2 u = pointPos - lineStart;
+	Vector2 projV = hatV * (u.Dot(hatV));
+	Vector2 projectedPos = lineStart + projV;
+	float distance = (projectedPos - pointPos).Size();
+	for (auto const& v : point)
 	{
-		Vector2 n = (v - spherePosition).Normalize();
-		Vector2 l = (lightPosition - v).Normalize();
-		float shading = Math::Clamp(n.Dot(l), 0.f, 1.f);
-		r.DrawPoint(v, lightColor * shading);
+		r.DrawPoint(v + projectedPos, LinearColor::Magenta);
 	}
 
-	// 현재 조명의 각 출력
-	r.PushStatisticText(std::string("Light Degree : ") + std::to_string(currentDegree));
+	// 투영 라인 그리기
+	r.DrawLine(projectedPos, pointPos, LinearColor::Gray);
+
+	// 관련 데이터 화면 출력
+	r.PushStatisticText(std::string("Point : ") + pointPos.ToString());
+	r.PushStatisticText(std::string("Projection : ") + projectedPos.ToString());
+	r.PushStatisticText(std::string("Distance : ") + std::to_string(distance));
 }
 
 void SoftRenderer::DrawMesh2D(const class DD::Mesh& InMesh, const Matrix3x3& InMatrix, const LinearColor& InColor)
