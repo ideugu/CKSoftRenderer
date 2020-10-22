@@ -43,6 +43,7 @@ void SoftRenderer::DrawGrid2D()
 
 // 실습을 위한 변수
 float currentDegree = 0.f;
+Vector2 spherePosition = Vector2::Zero;
 
 // 게임 로직
 void SoftRenderer::Update2D(float InDeltaSeconds)
@@ -61,7 +62,7 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	float alpha = (sinf(currentRad) + 1) * 0.5f;
 
 	// [0,1]을 활용해 주기적으로 크기를 반복하기
-	currentDegree = Math::Lerp(0.f, 180.f, alpha);
+	currentDegree = Math::Lerp(0.f, 360.f, alpha);
 }
 
 // 렌더링 로직
@@ -70,28 +71,75 @@ void SoftRenderer::Render2D()
 	auto& r = GetRenderer();
 	const auto& g = Get2DGameEngine();
 
-	// 격자 그리기
-	DrawGrid2D();
+	// 조명 구체
+	static std::vector<Vector2> light;
+	if (light.empty())
+	{
+		float lightRadius = 10.f;
+		for (float x = -lightRadius; x <= lightRadius; ++x)
+		{
+			for (float y = -lightRadius; y <= lightRadius; ++y)
+			{
+				Vector2 target(x, y);
+				float sizeSquared = target.SizeSquared();
+				float rr = lightRadius * lightRadius;
+				if (sizeSquared < rr)
+				{
+					light.push_back(target);
+				}
+			}
+		}
+	}
 
-	// 렌더링 변수
-	static Vector3 sp(-600.f, 0.f, 1.f);
-	static Vector3 ep(600.f, 0.f, 1.f);
+	// 조명을 적용할 구체
+	static std::vector<Vector2> sphere;
+	static float sphereRadius = 50.f;
+	if (sphere.empty())
+	{
+		for (float x = -sphereRadius; x <= sphereRadius; ++x)
+		{
+			for (float y = -sphereRadius; y <= sphereRadius; ++y)
+			{
+				Vector2 target(x, y);
+				float sizeSquared = target.SizeSquared();
+				float rr = sphereRadius * sphereRadius;
+				if (sizeSquared < rr)
+				{
+					sphere.push_back(target);
+				}
+			}
+		}
+	}
 
-	// 아핀 변환 행렬 ( 회전 ) 
-	float sin, cos;
+	// 조명의 좌표 지정
+	float sin = 0.f, cos = 0.f;
+	static float lightLength = 200.f;
 	Math::GetSinCos(sin, cos, currentDegree);
-	Vector3 rBasis1(cos, sin, 0.f);
-	Vector3 rBasis2(-sin, cos, 0.f);
-	Vector3 rBasis3 = Vector3::UnitZ;
-	Matrix3x3 rMatrix(rBasis1, rBasis2, rBasis3);
+	Vector2 lightPosition = Vector2(cos, sin) * lightLength;
+	static HSVColor hsv(0.f, 1.f, 1.f);
 
-	Vector2 s = (rMatrix * sp).ToVector2();
-	Vector2 e = (rMatrix * ep).ToVector2();
-	HSVColor hsv(0.f, 1.f, 0.85f); // 잘 보이도록 채도를 조금만 줄였음. 
-	hsv.H = currentDegree / 180.f;
-	r.DrawLine(s, e, hsv.ToLinearColor());
+	// 각에 따른 색상의 변화
+	hsv.H = Math::Deg2Rad(currentDegree) * Math::InvPI * 0.5f;
 
-	r.PushStatisticText(std::string("Rotation : ") + std::to_string(currentDegree));
+	// 조명 그리기
+	LinearColor lightColor = hsv.ToLinearColor();
+	r.DrawLine(lightPosition, lightPosition - lightPosition.Normalize() * 50.f, lightColor);
+	for (auto const& v : light)
+	{
+		r.DrawPoint(v + lightPosition, lightColor);
+	}
+
+	// 원을 구성하는 모든 픽셀에 NdotL을 계산해 음영을 산출하고 이를 최종 색상에 반영
+	for (auto const& v : sphere)
+	{
+		Vector2 n = (v - spherePosition).Normalize();
+		Vector2 l = (lightPosition - v).Normalize();
+		float shading = Math::Clamp(n.Dot(l), 0.f, 1.f);
+		r.DrawPoint(v, lightColor * shading);
+	}
+
+	// 현재 조명의 각 출력
+	r.PushStatisticText(std::string("Light Degree : ") + std::to_string(currentDegree));
 }
 
 void SoftRenderer::DrawMesh2D(const class DD::Mesh& InMesh, const Matrix3x3& InMatrix, const LinearColor& InColor)
