@@ -60,12 +60,14 @@ FORCEINLINE Matrix3x3 Matrix3x3::Tranpose() const
 
 FORCEINLINE const Vector3& Matrix3x3::operator[](BYTE InIndex) const
 {
-	return (InIndex < Rank) ? Cols[InIndex] : Cols[0];
+	assert(InIndex < Rank);
+	return Cols[InIndex];
 }
 
 FORCEINLINE Vector3& Matrix3x3::operator[](BYTE InIndex)
 {
-	return (InIndex < Rank) ? Cols[InIndex] : Cols[0];
+	assert(InIndex < Rank);
+	return Cols[InIndex];
 }
 
 FORCEINLINE Matrix3x3 Matrix3x3::operator*(float InScalar) const
@@ -79,22 +81,22 @@ FORCEINLINE Matrix3x3 Matrix3x3::operator*(float InScalar) const
 
 FORCEINLINE Matrix3x3 Matrix3x3::operator*(const Matrix3x3 &InMatrix) const
 {
-	Matrix3x3 tpMat = Tranpose();
+	Matrix3x3 transposedMatrix = Tranpose();
 	return Matrix3x3(
-		Vector3(tpMat[0].Dot(InMatrix[0]), tpMat[1].Dot(InMatrix[0]), tpMat[2].Dot(InMatrix[0])),
-		Vector3(tpMat[0].Dot(InMatrix[1]), tpMat[1].Dot(InMatrix[1]), tpMat[2].Dot(InMatrix[1])),
-		Vector3(tpMat[0].Dot(InMatrix[2]), tpMat[1].Dot(InMatrix[2]), tpMat[2].Dot(InMatrix[2]))
+		Vector3(transposedMatrix[0].Dot(InMatrix[0]), transposedMatrix[1].Dot(InMatrix[0]), transposedMatrix[2].Dot(InMatrix[0])),
+		Vector3(transposedMatrix[0].Dot(InMatrix[1]), transposedMatrix[1].Dot(InMatrix[1]), transposedMatrix[2].Dot(InMatrix[1])),
+		Vector3(transposedMatrix[0].Dot(InMatrix[2]), transposedMatrix[1].Dot(InMatrix[2]), transposedMatrix[2].Dot(InMatrix[2]))
 	);
 
 }
 
 FORCEINLINE Vector3 Matrix3x3::operator*(const Vector3& InVector) const
 {
-	Matrix3x3 tpMat = Tranpose();
+	Matrix3x3 transposedMatrix = Tranpose();
 	return Vector3(
-		tpMat[0].Dot(InVector),
-		tpMat[1].Dot(InVector),
-		tpMat[2].Dot(InVector)
+		transposedMatrix[0].Dot(InVector),
+		transposedMatrix[1].Dot(InVector),
+		transposedMatrix[2].Dot(InVector)
 	);
 }
 

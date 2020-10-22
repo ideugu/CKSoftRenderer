@@ -187,6 +187,7 @@ FORCEINLINE Vector2 Vector2::ToPolarCoordinate() const
 
 FORCEINLINE constexpr Vector2 Vector2::ToCartesianCoordinate() const
 {
+	// 극좌표계에서 X는 반지름, Y는 각(rad)
 	float sin = 0.f, cos = 0.f;
 	Math::GetSinCosRad(sin, cos, Y);
 	return Vector2(X * cos, X * sin);

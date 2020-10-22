@@ -51,12 +51,14 @@ FORCEINLINE Matrix2x2 Matrix2x2::Tranpose() const
 
 FORCEINLINE const Vector2& Matrix2x2::operator[](BYTE InIndex) const
 {
-	return (InIndex < Rank) ? Cols[InIndex] : Cols[0];
+	assert(InIndex < Rank);
+	return Cols[InIndex];
 }
 
 FORCEINLINE Vector2& Matrix2x2::operator[](BYTE InIndex)
 {
-	return (InIndex < Rank) ? Cols[InIndex] : Cols[0];
+	assert(InIndex < Rank);
+	return Cols[InIndex];
 }
 
 FORCEINLINE Matrix2x2 Matrix2x2::operator*(float InScalar) const
@@ -69,19 +71,19 @@ FORCEINLINE Matrix2x2 Matrix2x2::operator*(float InScalar) const
 
 FORCEINLINE Matrix2x2 Matrix2x2::operator*(const Matrix2x2 &InMatrix) const
 {
-	Matrix2x2 tpMat = Tranpose();
+	Matrix2x2 transposedMatrix = Tranpose();
 	return Matrix2x2(
-		Vector2(tpMat[0].Dot(InMatrix[0]), tpMat[1].Dot(InMatrix[0])),
-		Vector2(tpMat[0].Dot(InMatrix[1]), tpMat[1].Dot(InMatrix[1]))
+		Vector2(transposedMatrix[0].Dot(InMatrix[0]), transposedMatrix[1].Dot(InMatrix[0])),
+		Vector2(transposedMatrix[0].Dot(InMatrix[1]), transposedMatrix[1].Dot(InMatrix[1]))
 	);
 }
 
 FORCEINLINE Vector2 Matrix2x2::operator*(const Vector2& InVector) const
 {
-	Matrix2x2 tpMat = Tranpose();
+	Matrix2x2 transposedMatrix = Tranpose();
 	return Vector2(
-		tpMat[0].Dot(InVector),
-		tpMat[1].Dot(InVector)
+		transposedMatrix[0].Dot(InVector),
+		transposedMatrix[1].Dot(InVector)
 	);
 }
 
