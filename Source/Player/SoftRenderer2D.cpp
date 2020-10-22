@@ -41,14 +41,10 @@ void SoftRenderer::DrawGrid2D()
 	r.DrawFullVerticalLine(worldOrigin.X, LinearColor::Green);
 }
 
-#include <random>
-
 // 실습을 위한 변수
-static std::random_device rd;
-static std::mt19937 mt(rd());
-float currentDegree = 0.f;
-Vector2 lineStart(-400.f, 10.f);
-Vector2 lineEnd(400.f, -10.f);
+Vector2 deltaPosition;
+float deltaDegree = 0.f;
+float currentScale = 10.f;
 
 // 게임 로직
 void SoftRenderer::Update2D(float InDeltaSeconds)
@@ -57,20 +53,17 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	const InputManager& input = g.GetInputManager();
 
 	// 게임 로직에만 사용하는 변수
-	static float duration = 6.f;
-	static float elapsedTime = 0.f;
+	static float moveSpeed = 100.f;
+	static float scaleMin = 100.f;
+	static float scaleMax = 200.f;
+	static float scaleSpeed = 20.f;
 	static float rotateSpeed = 180.f;
 
-	elapsedTime = Math::Clamp(elapsedTime + InDeltaSeconds, 0.f, duration);
-	currentDegree = Math::FMod(currentDegree + rotateSpeed * InDeltaSeconds, 360.f);
-	if (elapsedTime == duration)
-	{
-		std::uniform_real_distribution<float>  randomY(-200.f, 200.f);
-		lineStart = Vector2(-400.f, randomY(mt));
-		lineEnd = Vector2(400.f, randomY(mt));
-		elapsedTime = 0.f;
-		return;
-	}
+	// 입력 값으로 데이터 변경
+	deltaPosition = Vector2(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis)) * moveSpeed * InDeltaSeconds;
+	float deltaScale = input.GetAxis(InputAxis::ZAxis) * scaleSpeed * InDeltaSeconds;
+	currentScale = Math::Clamp(currentScale + deltaScale, scaleMin, scaleMax);
+	deltaDegree = input.GetAxis(InputAxis::WAxis) * rotateSpeed * InDeltaSeconds;
 }
 
 // 렌더링 로직
@@ -79,57 +72,76 @@ void SoftRenderer::Render2D()
 	auto& r = GetRenderer();
 	const auto& g = Get2DGameEngine();
 
-	// 점
-	static std::vector<Vector2> point;
-	if (point.empty())
-	{
-		float radius = 5.f;
-		for (float x = -radius; x <= radius; ++x)
-		{
-			for (float y = -radius; y <= radius; ++y)
-			{
-				Vector2 target(x, y);
-				float sizeSquared = target.SizeSquared();
-				float rr = radius * radius;
-				if (sizeSquared < rr)
-				{
-					point.push_back(target);
-				}
-			}
-		}
-	}
+	// 격자 그리기
+	DrawGrid2D();
 
-	// 점 그리기
+	// 렌더링 관련 변수
+	static Vector2 currentPosition;
+	static float currentDegree = 0.f;
+	currentPosition += deltaPosition;
+	currentDegree += deltaDegree;
+
+	// 메시 데이터
+	static constexpr float squareHalfSize = 0.5f;
+	static constexpr size_t vertexCount = 4;
+	static constexpr size_t triangleCount = 2;
+
+	// 정점 배열과 인덱스 배열 생성
+	static constexpr std::array<Vertex2D, vertexCount> rawVertices = {
+		Vertex2D(Vector2(-squareHalfSize, -squareHalfSize)),
+		Vertex2D(Vector2(-squareHalfSize, squareHalfSize)),
+		Vertex2D(Vector2(squareHalfSize, squareHalfSize)),
+		Vertex2D(Vector2(squareHalfSize, -squareHalfSize))
+	};
+
+	static constexpr std::array<size_t, triangleCount * 3> indices = {
+		0, 1, 2,
+		0, 2, 3
+	};
+
+	// 아핀 변환 행렬 ( 크기 ) 
+	Vector3 sBasis1(currentScale, 0.f, 0.f);
+	Vector3 sBasis2(0.f, currentScale, 0.f);
+	Vector3 sBasis3 = Vector3::UnitZ;
+	Matrix3x3 sMatrix(sBasis1, sBasis2, sBasis3);
+
+	// 아핀 변환 행렬 ( 회전 ) 
 	float sin = 0.f, cos = 0.f;
-	static float pointOrbit = 250.f;
 	Math::GetSinCos(sin, cos, currentDegree);
-	Vector2 pointPos = Vector2(cos, sin) * pointOrbit;
-	for (auto const& v : point)
+	Vector3 rBasis1(cos, sin, 0.f);
+	Vector3 rBasis2(-sin, cos, 0.f);
+	Vector3 rBasis3 = Vector3::UnitZ;
+	Matrix3x3 rMatrix(rBasis1, rBasis2, rBasis3);
+
+	// 아핀 변환 행렬 ( 이동 ) 
+	Vector3 tBasis1 = Vector3::UnitX;
+	Vector3 tBasis2 = Vector3::UnitY;
+	Vector3 tBasis3(currentPosition.X, currentPosition.Y, 1.f);
+	Matrix3x3 tMatrix(tBasis1, tBasis2, tBasis3);
+
+	// 모든 아핀 변환의 조합 행렬. 크기-회전-이동 순으로 조합
+	Matrix3x3 finalMatrix = tMatrix * rMatrix * sMatrix;
+
+	// 정점에 행렬을 적용
+	static std::vector<Vertex2D> vertices(vertexCount);
+	for (size_t vi = 0; vi < vertexCount; ++vi)
 	{
-		r.DrawPoint(v + pointPos, LinearColor::Red);
+		vertices[vi].Position = finalMatrix * rawVertices[vi].Position;
 	}
 
-	// 투영할 라인 그리기
-	r.DrawLine(lineStart, lineEnd, LinearColor::Black);
-
-	// 투영된 위치 그리기
-	Vector2 hatV = (lineEnd - lineStart).Normalize();
-	Vector2 u = pointPos - lineStart;
-	Vector2 projV = hatV * (u.Dot(hatV));
-	Vector2 projectedPos = lineStart + projV;
-	float distance = (projectedPos - pointPos).Size();
-	for (auto const& v : point)
+	// 변환된 정점을 잇는 선 그리기
+	for (size_t ti = 0; ti < triangleCount; ++ti)
 	{
-		r.DrawPoint(v + projectedPos, LinearColor::Magenta);
+		size_t bi = ti * 3;
+		r.DrawLine(vertices[indices[bi]].Position, vertices[indices[bi + 1]].Position, _WireframeColor);
+		r.DrawLine(vertices[indices[bi]].Position, vertices[indices[bi + 2]].Position, _WireframeColor);
+		r.DrawLine(vertices[indices[bi + 1]].Position, vertices[indices[bi + 2]].Position, _WireframeColor);
 	}
 
-	// 투영 라인 그리기
-	r.DrawLine(projectedPos, pointPos, LinearColor::Gray);
-
-	// 관련 데이터 화면 출력
-	r.PushStatisticText(std::string("Point : ") + pointPos.ToString());
-	r.PushStatisticText(std::string("Projection : ") + projectedPos.ToString());
-	r.PushStatisticText(std::string("Distance : ") + std::to_string(distance));
+	// 현재 위치, 스케일, 회전각을 화면에 출력
+	r.PushStatisticText(std::string("Position : ") + currentPosition.ToString());
+	r.PushStatisticText(std::string("Scale : ") + std::to_string(currentScale));
+	r.PushStatisticText(std::string("Degree : ") + std::to_string(currentDegree));
 }
 
 void SoftRenderer::DrawMesh2D(const class DD::Mesh& InMesh, const Matrix3x3& InMatrix, const LinearColor& InColor)
