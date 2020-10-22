@@ -9,12 +9,12 @@ namespace DD
 struct Vertex2D
 {
 public:
-	Vertex2D() = default;
-	Vertex2D(const Vector2& InPosition) : Position(InPosition) { }
-	Vertex2D(const Vector2& InPosition, const LinearColor& InColor) : Position(InPosition), Color(InColor) { }
-	Vertex2D(const Vector2& InPosition, const LinearColor& InColor, const Vector2& InUV) : Position(InPosition), Color(InColor), UV(InUV) { }
+	constexpr Vertex2D() = default;
+	constexpr Vertex2D(const Vector2& InPosition) : Position(InPosition) { }
+	constexpr Vertex2D(const Vector2& InPosition, const LinearColor& InColor) : Position(InPosition), Color(InColor) { }
+	constexpr Vertex2D(const Vector2& InPosition, const LinearColor& InColor, const Vector2& InUV) : Position(InPosition), Color(InColor), UV(InUV) { }
 
-	Vertex2D operator*(float InScalar) const
+	constexpr Vertex2D operator*(float InScalar) const
 	{
 		return Vertex2D(
 			Position * InScalar,
@@ -23,7 +23,7 @@ public:
 		);
 	}
 
-	Vertex2D operator+(const Vertex2D& InVector) const
+	constexpr Vertex2D operator+(const Vertex2D& InVector) const
 	{
 		return Vertex2D(
 			Position + InVector.Position,
