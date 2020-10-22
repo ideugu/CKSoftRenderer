@@ -60,12 +60,14 @@ FORCEINLINE constexpr Matrix4x4 Matrix4x4::Tranpose() const
 
 FORCEINLINE const Vector4& Matrix4x4::operator[](BYTE InIndex) const
 {
-	return (InIndex < Rank) ? Cols[InIndex] : Cols[0];
+	assert(InIndex < Rank);
+	return Cols[InIndex];
 }
 
 FORCEINLINE Vector4& Matrix4x4::operator[](BYTE InIndex)
 {
-	return (InIndex < Rank) ? Cols[InIndex] : Cols[0];
+	assert(InIndex < Rank);
+	return Cols[InIndex];
 }
 
 FORCEINLINE constexpr Matrix4x4 Matrix4x4::operator*(float InScalar) const
@@ -80,23 +82,23 @@ FORCEINLINE constexpr Matrix4x4 Matrix4x4::operator*(float InScalar) const
 
 FORCEINLINE constexpr Matrix4x4 Matrix4x4::operator*(const Matrix4x4 &InMatrix) const
 {
-	Matrix4x4 tpMat = Tranpose();
+	Matrix4x4 transposedMatrix = Tranpose();
 	return Matrix4x4(
-		Vector4(tpMat[0].Dot(InMatrix[0]), tpMat[1].Dot(InMatrix[0]), tpMat[2].Dot(InMatrix[0]), tpMat[3].Dot(InMatrix[0])),
-		Vector4(tpMat[0].Dot(InMatrix[1]), tpMat[1].Dot(InMatrix[1]), tpMat[2].Dot(InMatrix[1]), tpMat[3].Dot(InMatrix[1])),
-		Vector4(tpMat[0].Dot(InMatrix[2]), tpMat[1].Dot(InMatrix[2]), tpMat[2].Dot(InMatrix[2]), tpMat[3].Dot(InMatrix[2])),
-		Vector4(tpMat[0].Dot(InMatrix[3]), tpMat[1].Dot(InMatrix[3]), tpMat[2].Dot(InMatrix[3]), tpMat[3].Dot(InMatrix[3]))
+		Vector4(transposedMatrix[0].Dot(InMatrix[0]), transposedMatrix[1].Dot(InMatrix[0]), transposedMatrix[2].Dot(InMatrix[0]), transposedMatrix[3].Dot(InMatrix[0])),
+		Vector4(transposedMatrix[0].Dot(InMatrix[1]), transposedMatrix[1].Dot(InMatrix[1]), transposedMatrix[2].Dot(InMatrix[1]), transposedMatrix[3].Dot(InMatrix[1])),
+		Vector4(transposedMatrix[0].Dot(InMatrix[2]), transposedMatrix[1].Dot(InMatrix[2]), transposedMatrix[2].Dot(InMatrix[2]), transposedMatrix[3].Dot(InMatrix[2])),
+		Vector4(transposedMatrix[0].Dot(InMatrix[3]), transposedMatrix[1].Dot(InMatrix[3]), transposedMatrix[2].Dot(InMatrix[3]), transposedMatrix[3].Dot(InMatrix[3]))
 	);
 }
 
 FORCEINLINE constexpr Vector4 Matrix4x4::operator*(const Vector4& InVector) const
 {
-	Matrix4x4 tpMat = Tranpose();
+	Matrix4x4 transposedMatrix = Tranpose();
 	return Vector4(
-		tpMat[0].Dot(InVector),
-		tpMat[1].Dot(InVector),
-		tpMat[2].Dot(InVector),
-		tpMat[3].Dot(InVector)
+		transposedMatrix[0].Dot(InVector),
+		transposedMatrix[1].Dot(InVector),
+		transposedMatrix[2].Dot(InVector),
+		transposedMatrix[3].Dot(InVector)
 	);
 }
 
