@@ -133,9 +133,60 @@ void SoftRenderer::Render2D()
 	for (size_t ti = 0; ti < triangleCount; ++ti)
 	{
 		size_t bi = ti * 3;
-		r.DrawLine(vertices[indices[bi]].Position, vertices[indices[bi + 1]].Position, _WireframeColor);
-		r.DrawLine(vertices[indices[bi]].Position, vertices[indices[bi + 2]].Position, _WireframeColor);
-		r.DrawLine(vertices[indices[bi + 1]].Position, vertices[indices[bi + 2]].Position, _WireframeColor);
+		std::array<Vertex2D, 3> tv = { vertices[indices[bi]] , vertices[indices[bi + 1]], vertices[indices[bi + 2]] };
+
+		Vector2 minPos(Math::Min3(tv[0].Position.X, tv[1].Position.X, tv[2].Position.X), Math::Min3(tv[0].Position.Y, tv[1].Position.Y, tv[2].Position.Y));
+		Vector2 maxPos(Math::Max3(tv[0].Position.X, tv[1].Position.X, tv[2].Position.X), Math::Max3(tv[0].Position.Y, tv[1].Position.Y, tv[2].Position.Y));
+
+		// 무게중심좌표를 위한 준비작업
+		Vector2 u = tv[1].Position - tv[0].Position;
+		Vector2 v = tv[2].Position - tv[0].Position;
+
+		// 공통 분모 ( uu * vv - uv * uv )
+		float udotv = u.Dot(v);
+		float vdotv = v.Dot(v);
+		float udotu = u.Dot(u);
+		float denominator = udotv * udotv - vdotv * udotu;
+		// 퇴화삼각형은 건너 뜀
+		if (Math::EqualsInTolerance(denominator, 0.0f))
+		{
+			continue;
+		}
+		float invDenominator = 1.f / denominator;
+
+		// 화면상의 점 구하기
+		ScreenPoint lowerLeftPoint = ScreenPoint::ToScreenCoordinate(_ScreenSize, minPos);
+		ScreenPoint upperRightPoint = ScreenPoint::ToScreenCoordinate(_ScreenSize, maxPos);
+
+		// 두 점이 화면 밖을 벗어나는 경우 클리핑 처리
+		lowerLeftPoint.X = Math::Max(0, lowerLeftPoint.X);
+		lowerLeftPoint.Y = Math::Min(_ScreenSize.Y, lowerLeftPoint.Y);
+		upperRightPoint.X = Math::Min(_ScreenSize.X, upperRightPoint.X);
+		upperRightPoint.Y = Math::Max(0, upperRightPoint.Y);
+
+		// 삼각형을 둘러싼 사각형 영역의 점을 모두 Loop
+		for (int x = lowerLeftPoint.X; x <= upperRightPoint.X; ++x)
+		{
+			for (int y = upperRightPoint.Y; y <= lowerLeftPoint.Y; ++y)
+			{
+				ScreenPoint fragment = ScreenPoint(x, y);
+				Vector2 pointToTest = fragment.ToCartesianCoordinate(_ScreenSize);
+				Vector2 w = pointToTest - tv[0].Position;
+				float wdotu = w.Dot(u);
+				float wdotv = w.Dot(v);
+
+				// 분자 값을 구하고 최종 무게중심좌표 산출
+				float s = (wdotv * udotv - wdotu * vdotv) * invDenominator;
+				float t = (wdotu * udotv - wdotv * udotu) * invDenominator;
+				float oneMinusST = 1.f - s - t;
+
+				// 컨벡스 조건을 만족할 때만 점 찍기
+				if (((s >= 0.f) && (s <= 1.f)) && ((t >= 0.f) && (t <= 1.f)) && ((oneMinusST >= 0.f) && (oneMinusST <= 1.f)))
+				{
+					r.DrawPoint(fragment, LinearColor::Blue);
+				}
+			}
+		}
 	}
 
 	// 현재 위치, 스케일, 회전각을 화면에 출력
