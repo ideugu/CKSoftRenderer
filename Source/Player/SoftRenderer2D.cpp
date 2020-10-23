@@ -54,8 +54,8 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 
 	// 게임 로직에만 사용하는 변수
 	static float moveSpeed = 100.f;
-	static float scaleMin = 100.f;
-	static float scaleMax = 200.f;
+	static float scaleMin = 300.f;
+	static float scaleMax = 400.f;
 	static float scaleSpeed = 20.f;
 	static float rotateSpeed = 180.f;
 
@@ -82,21 +82,18 @@ void SoftRenderer::Render2D()
 	currentDegree += deltaDegree;
 
 	// 메시 데이터
-	static constexpr float squareHalfSize = 0.5f;
-	static constexpr size_t vertexCount = 4;
-	static constexpr size_t triangleCount = 2;
+	static constexpr size_t vertexCount = 3;
+	static constexpr size_t triangleCount = 1;
 
 	// 정점 배열과 인덱스 배열 생성
 	static constexpr std::array<Vertex2D, vertexCount> rawVertices = {
-		Vertex2D(Vector2(-squareHalfSize, -squareHalfSize)),
-		Vertex2D(Vector2(-squareHalfSize, squareHalfSize)),
-		Vertex2D(Vector2(squareHalfSize, squareHalfSize)),
-		Vertex2D(Vector2(squareHalfSize, -squareHalfSize))
+		Vertex2D(Vector2(0.f, 0.25f), LinearColor(1.f, 0.f, 0.f)),
+		Vertex2D(Vector2(-0.5f, -0.25f), LinearColor(0.f, 1.f, 0.f)),
+		Vertex2D(Vector2(0.5f, -0.25f), LinearColor(0.f, 0.f, 1.f))
 	};
 
 	static constexpr std::array<size_t, triangleCount * 3> indices = {
-		0, 1, 2,
-		0, 2, 3
+		0, 2, 1
 	};
 
 	// 아핀 변환 행렬 ( 크기 ) 
@@ -127,6 +124,7 @@ void SoftRenderer::Render2D()
 	for (size_t vi = 0; vi < vertexCount; ++vi)
 	{
 		vertices[vi].Position = finalMatrix * rawVertices[vi].Position;
+		vertices[vi].Color = rawVertices[vi].Color;
 	}
 
 	// 변환된 정점을 잇는 선 그리기
@@ -183,7 +181,8 @@ void SoftRenderer::Render2D()
 				// 컨벡스 조건을 만족할 때만 점 찍기
 				if (((s >= 0.f) && (s <= 1.f)) && ((t >= 0.f) && (t <= 1.f)) && ((oneMinusST >= 0.f) && (oneMinusST <= 1.f)))
 				{
-					r.DrawPoint(fragment, LinearColor::Blue);
+					LinearColor outColor = tv[0].Color * oneMinusST + tv[1].Color * s + tv[2].Color * t;
+					r.DrawPoint(fragment, outColor);
 				}
 			}
 		}
