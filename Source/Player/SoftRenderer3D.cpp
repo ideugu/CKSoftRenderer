@@ -51,39 +51,6 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	CameraObject& camera = g.GetMainCamera();
 	camera.GetTransform().AddYawRotation(-input.GetAxis(InputAxis::XAxis) * rotateSpeed * InDeltaSeconds);
 	camera.GetTransform().AddPitchRotation(-input.GetAxis(InputAxis::YAxis) * rotateSpeed * InDeltaSeconds);
-
-
-
-	// 플레이어 게임 오브젝트 트랜스폼의 변경
-	//GameObject& player = _GameEngine3.FindGameObject(GameEngine::PlayerKey);
-	//if (!player.IsNotFound())
-	//{
-	//	Transform& playerTransform = player.GetTransform();
-	//	playerTransform.AddPosition(Vector3::UnitZ * input.GetZAxis() * moveSpeed * InDeltaSeconds);
-	//	playerTransform.AddPitchRotation(-input.GetWAxis() * rotateSpeed * InDeltaSeconds);
-	//}
-
-	//// 카메라 회전에는 좌우 반전을 적용
-	//_GameEngine3.GetMainCamera().GetTransform().AddYawRotation(-input.GetXAxis() * rotateSpeed * InDeltaSeconds);
-	//_GameEngine3.GetMainCamera().GetTransform().AddPitchRotation(-input.GetYAxis() * rotateSpeed * InDeltaSeconds);
-
-	//CameraObject& camera = g.GetMainCamera();
-
-	//// 기본 설정 변수
-	//static float fovSpeed = 100.f;
-	//static float rotateSpeed = 180.f;
-	//static float moveSpeed = 500.f;
-
-	//// 게임 로직에서 사용할 게임 오브젝트 레퍼런스
-	//GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
-	//GameObject& goCameraRig = g.GetGameObject(GameEngine::CameraRigGo);
-
-	//goPlayer.GetTransform().AddLocalYawRotation(-input.GetAxis(InputAxis::XAxis) * rotateSpeed * InDeltaSeconds);
-	//goPlayer.GetTransform().AddLocalPosition(goPlayer.GetTransform().GetLocalZ() * input.GetAxis(InputAxis::YAxis) * moveSpeed * InDeltaSeconds);
-
-	//// 카메라 화각 설정
-	//float newFOV = Math::Clamp(camera.GetFOV() + input.GetAxis(InputAxis::ZAxis) * fovSpeed * InDeltaSeconds, 5.f, 179.f);
-	//camera.SetFOV(newFOV);
 }
 
 // 캐릭터 애니메이션 로직
