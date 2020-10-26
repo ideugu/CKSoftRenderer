@@ -41,27 +41,66 @@ void SoftRenderer::DrawGrid2D()
 	r.DrawFullVerticalLine(worldOrigin.X, LinearColor::Green);
 }
 
+#include <random>
+
 // 실습을 위한 변수
-float currentDegree = 0.f;
+static std::random_device rd;
+static std::mt19937 mt(rd());
+static float fovAngle = 60.f; // 시야각 60도
+Vector2 playerStart(100.f, 100.f);
+Vector2 playerDestination(-100.f, 20.f);
+Vector2 playerPosition = playerStart;
+Vector2 guardPosition = Vector2::Zero;
+LinearColor playerColor = LinearColor::Gray;
+LinearColor guardColor = LinearColor::Blue;
 
 // 게임 로직
 void SoftRenderer::Update2D(float InDeltaSeconds)
 {
-	auto& g = Get2DGameEngine();
-	const InputManager& input = g.GetInputManager();
-
-	// 게임 로직에만 사용하는 변수
-	static float duration = 20.f;
+	static float duration = 3.f;
 	static float elapsedTime = 0.f;
 
-	// 경과 시간에 따른 현재 각과 이를 사용한 [0,1]값의 생성
-	elapsedTime += InDeltaSeconds;
-	elapsedTime = Math::FMod(elapsedTime, duration);
-	float currentRad = (elapsedTime / duration) * Math::TwoPI;
-	float alpha = (sinf(currentRad) + 1) * 0.5f;
+	// 보초의 시야 벡터 ( Y축 )
+	static Vector2 f = Vector2::UnitY;
+	// 보초 시야각의 절반 코사인 값
+	static float cos = cosf(Math::Deg2Rad(fovAngle) * 0.5f);
 
-	// [0,1]을 활용해 주기적으로 크기를 반복하기
-	currentDegree = Math::Lerp(0.f, 180.f, alpha);
+	elapsedTime = Math::Clamp(elapsedTime + InDeltaSeconds, 0.f, duration);
+
+	// 지정한 시간이 경과하면 새로운 목표를 랜덤으로 설정
+	if (elapsedTime == duration)
+	{
+		playerStart = playerDestination;
+		playerPosition = playerStart;
+
+		std::uniform_real_distribution<float>  randomPosX(-200.f, 200.f);
+		std::uniform_real_distribution<float>  randomPosY(20.f, 200.f);
+		playerDestination = Vector2(randomPosX(mt), randomPosY(mt));
+
+		elapsedTime = 0.f;
+	}
+	else // 그렇지 않으면 시간 비율에 따라 선형보간하면서 이동
+	{
+		float ratio = elapsedTime / duration;
+		playerPosition = Vector2(
+			Math::Lerp(playerStart.X, playerDestination.X, ratio),
+			Math::Lerp(playerStart.Y, playerDestination.Y, ratio)
+		);
+	}
+
+	// 시야각 판별 진행
+	Vector2 v = (playerPosition - guardPosition).Normalize(); // 보초에서 플레이어로 향하는 정규화된 벡터
+
+	if (v.Dot(f) >= cos) // 시야에 감지되면 붉은 색으로 변경
+	{
+		playerColor = LinearColor::Red;
+		guardColor = LinearColor::Red;
+	}
+	else
+	{
+		playerColor = LinearColor::Gray;
+		guardColor = LinearColor::Blue;
+	}
 }
 
 // 렌더링 로직
@@ -73,25 +112,43 @@ void SoftRenderer::Render2D()
 	// 격자 그리기
 	DrawGrid2D();
 
-	// 렌더링 변수
-	static Vector3 sp(-600.f, 0.f, 1.f);
-	static Vector3 ep(600.f, 0.f, 1.f);
+	// 플레이어와 보초를 표현하기 위한 구체
+	static float radius = 10.f;
+	static std::vector<Vector2> sphere;
+	if (sphere.empty())
+	{
+		for (float x = -radius; x <= radius; ++x)
+		{
+			for (float y = -radius; y <= radius; ++y)
+			{
+				Vector2 target(x, y);
+				float sizeSquared = target.SizeSquared();
+				float rr = radius * radius;
+				if (sizeSquared < rr)
+				{
+					sphere.push_back(target);
+				}
+			}
+		}
+	}
 
-	// 아핀 변환 행렬 ( 회전 ) 
-	float sin, cos;
-	Math::GetSinCos(sin, cos, currentDegree);
-	Vector3 rBasis1(cos, sin, 0.f);
-	Vector3 rBasis2(-sin, cos, 0.f);
-	Vector3 rBasis3 = Vector3::UnitZ;
-	Matrix3x3 rMatrix(rBasis1, rBasis2, rBasis3);
+	static float length = 300.f;
+	float halfAngle = Math::HalfPI - Math::Deg2Rad(fovAngle) * 0.5f;
+	static float sin = sinf(halfAngle);
+	static float cos = cosf(halfAngle);
 
-	Vector2 s = (rMatrix * sp).ToVector2();
-	Vector2 e = (rMatrix * ep).ToVector2();
-	HSVColor hsv(0.f, 1.f, 0.85f); // 잘 보이도록 채도를 조금만 줄였음. 
-	hsv.H = currentDegree / 180.f;
-	r.DrawLine(s, e, hsv.ToLinearColor());
+	r.DrawLine(guardPosition, guardPosition + Vector2(length * cos, length * sin), guardColor);
+	r.DrawLine(guardPosition, guardPosition + Vector2(-length * cos, length * sin), guardColor);
+	r.DrawLine(guardPosition, Vector2(0.f, 50.f), LinearColor::Black);
 
-	r.PushStatisticText(std::string("Rotation : ") + std::to_string(currentDegree));
+	for (auto const& v : sphere)
+	{
+		r.DrawPoint(v + guardPosition, guardColor);
+		r.DrawPoint(v + playerPosition, playerColor);
+	}
+
+	// 플레이어의 위치 출력
+	r.PushStatisticText(std::string("Player Position : ") + playerPosition.ToString());
 }
 
 void SoftRenderer::DrawMesh2D(const class DD::Mesh& InMesh, const Matrix3x3& InMatrix, const LinearColor& InColor)
