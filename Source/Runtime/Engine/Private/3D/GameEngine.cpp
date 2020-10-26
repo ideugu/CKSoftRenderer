@@ -67,6 +67,7 @@ bool GameEngine::LoadResources()
 	Mesh& cubeMesh = CreateMesh(GameEngine::CubeMesh);
 	auto& v = cubeMesh.GetVertices();
 	auto& i = cubeMesh.GetIndices();
+	auto& uv = cubeMesh.GetUVs();
 
 	static const float halfSize = 0.5f;
 	v = {
@@ -93,6 +94,21 @@ bool GameEngine::LoadResources()
 			20, 21, 22, 20, 22, 23  // Bottom
 	};
 
+	uv = {
+		// Right
+		Vector2(0.f, 48.f) / 64.f, Vector2(8.f, 48.f) / 64.f, Vector2(8.f, 56.f) / 64.f, Vector2(0.f, 56.f) / 64.f,
+		// Front
+		Vector2(8.f, 48.f) / 64.f, Vector2(8.f, 56.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(16.f, 48.f) / 64.f,
+		// Back
+		Vector2(32.f, 48.f) / 64.f, Vector2(32.f, 56.f) / 64.f, Vector2(24.f, 56.f) / 64.f, Vector2(24.f, 48.f) / 64.f,
+		// Left
+		Vector2(24.f, 48.f) / 64.f, Vector2(16.f, 48.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(24.f, 56.f) / 64.f,
+		// Top
+		Vector2(8.f, 64.f) / 64.f, Vector2(16.f, 64.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(8.f, 56.f) / 64.f,
+		// Bottom
+		Vector2(16.f, 64.f) / 64.f, Vector2(24.f, 64.f) / 64.f, Vector2(24.f, 56.f) / 64.f, Vector2(16.f, 56.f) / 64.f
+	};
+
 	// 텍스쳐 로딩
 	Texture& diffuseTexture = CreateTexture(GameEngine::DiffuseTexture, GameEngine::SteveTexturePath);
 	assert(diffuseTexture.IsIntialized());
@@ -110,8 +126,7 @@ bool GameEngine::LoadScene()
 	goPlayer.SetMesh(GameEngine::CubeMesh);
 	goPlayer.GetTransform().SetPosition(Vector3::Zero);
 	goPlayer.GetTransform().SetScale(Vector3::One * playerScale);
-	goPlayer.GetTransform().SetRotation(Rotator(0.f, 0.f, 0.f));
-	goPlayer.SetColor(LinearColor::Blue);
+	goPlayer.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
 
 	// 카메라 설정
 	_MainCamera.GetTransform().SetPosition(Vector3(0.f, 0.f, -500.f));
