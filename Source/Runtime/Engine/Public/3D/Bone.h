@@ -13,7 +13,7 @@ public:
 	{
 		_Hash = std::hash<std::string>()(_Name);
 		_BindPose = InTransform;
-		_Transform.SetLocalTransform(InTransform);
+		//_Transform.SetLocalTransform(InTransform);
 	}
 
 public:
@@ -24,7 +24,7 @@ public:
 	void SetParent(Bone& InBone) 
 	{
 		_ParentName = InBone.GetName();
-		_Transform.SetParent(InBone.GetTransform());
+		//_Transform.SetParent(InBone.GetTransform());
 	}
 
 	// Å° °ü·Ã
