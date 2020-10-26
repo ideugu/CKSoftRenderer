@@ -119,7 +119,7 @@ bool GameEngine::LoadResources()
 bool GameEngine::LoadScene()
 {
 	// 플레이어
-	constexpr float playerScale = 130.f;
+	constexpr float playerScale = 200.f;
 
 	// 플레이어 설정
 	GameObject& goPlayer = CreateNewGameObject(GameEngine::PlayerGo);
@@ -129,7 +129,7 @@ bool GameEngine::LoadScene()
 	goPlayer.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
 
 	// 카메라 설정
-	_MainCamera.GetTransform().SetPosition(Vector3(0.f, 800.f, -800.f));
+	_MainCamera.GetTransform().SetPosition(Vector3(0.f, 600.f, -600.f));
 	_MainCamera.GetTransform().SetRotation(Rotator(0.f, 0.f, 45.f));
 	return true;
 }

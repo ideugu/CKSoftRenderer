@@ -40,7 +40,6 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	const InputManager& input = g.GetInputManager();
 
 	// 기본 설정 변수
-	static float moveSpeed = 100.f;
 	static float rotateSpeed = 180.f;
 
 	// 게임 로직에서 사용할 게임 오브젝트 레퍼런스

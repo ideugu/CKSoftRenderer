@@ -32,7 +32,7 @@ public:
 private:
 	TransformComponent _Transform;
 
-	float _FOV = 30.f;
+	float _FOV = 60.f;
 	float _NearZ = 5.5f;
 	float _FarZ = 5000.f;
 	ScreenPoint _ViewportSize;
