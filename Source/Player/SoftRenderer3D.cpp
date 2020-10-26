@@ -45,12 +45,14 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 
 	// 게임 로직에서 사용할 게임 오브젝트 레퍼런스
 	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
-	goPlayer.GetTransform().AddPosition(Vector3::UnitZ * input.GetAxis(InputAxis::ZAxis) * moveSpeed * InDeltaSeconds);
-	goPlayer.GetTransform().AddPitchRotation(-input.GetAxis(InputAxis::WAxis) * rotateSpeed * InDeltaSeconds);
+	TransformComponent& playerTransform = goPlayer.GetTransform();
+	Vector3 inputVector = Vector3(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis), input.GetAxis(InputAxis::ZAxis));
+	playerTransform.AddPosition(inputVector * moveSpeed * InDeltaSeconds);
+	playerTransform.AddPitchRotation(-input.GetAxis(InputAxis::WAxis) * rotateSpeed * InDeltaSeconds);
 
+	// 카메라는 항상 플레이어를 바라보기
 	CameraObject& camera = g.GetMainCamera();
-	camera.GetTransform().AddYawRotation(-input.GetAxis(InputAxis::XAxis) * rotateSpeed * InDeltaSeconds);
-	camera.GetTransform().AddPitchRotation(-input.GetAxis(InputAxis::YAxis) * rotateSpeed * InDeltaSeconds);
+	camera.SetLookAtRotation(playerTransform.GetPosition());
 }
 
 // 캐릭터 애니메이션 로직
