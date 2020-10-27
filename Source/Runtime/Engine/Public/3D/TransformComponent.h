@@ -48,10 +48,12 @@ private:
 
 FORCEINLINE Matrix4x4 TransformComponent::GetModelingMatrix() const
 {
-	Matrix4x4 translate = Matrix4x4(Vector4::UnitX, Vector4::UnitY, Vector4::UnitZ, Vector4(_Position, true));
-	Matrix4x4 rotate = Matrix4x4(Vector4(_Right, false), Vector4(_Up, false), Vector4(_Forward, false), Vector4::UnitW);
-	Matrix4x4 scale = Matrix4x4(Vector4::UnitX * _Scale.X, Vector4::UnitY * _Scale.Y, Vector4::UnitZ * _Scale.Z, Vector4::UnitW);
-	return translate * rotate * scale;
+	return Matrix4x4(
+		Vector4(_Right * _Scale.X, false), 
+		Vector4(_Up * _Scale.Y, false), 
+		Vector4(_Forward * _Scale.Z, false),
+		Vector4(_Position, true)
+	);
 }
 
 FORCEINLINE void TransformComponent::CalculateLocalAxis()
