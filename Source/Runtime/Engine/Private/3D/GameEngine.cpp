@@ -70,29 +70,8 @@ bool GameEngine::LoadResources()
 	auto& i = cubeMesh.GetIndices();
 
 	static const float halfSize = 0.5f;
-	v = {
-		// Right 
-		Vector3(-1.f, -1.f, -1.f) * halfSize, Vector3(-1.f, -1.f, 1.f) * halfSize, Vector3(-1.f, 1.f, 1.f) * halfSize, Vector3(-1.f, 1.f, -1.f) * halfSize,
-		// Front
-		Vector3(-1.f, -1.f, 1.f) * halfSize, Vector3(-1.f, 1.f, 1.f) * halfSize, Vector3(1.f, 1.f, 1.f) * halfSize, Vector3(1.f, -1.f, 1.f) * halfSize,
-		// Back
-		Vector3(-1.f, -1.f, -1.f) * halfSize, Vector3(-1.f, 1.f, -1.f) * halfSize, Vector3(1.f, 1.f, -1.f) * halfSize, Vector3(1.f, -1.f, -1.f) * halfSize,
-		// Left
-		Vector3(1.f, -1.f, -1.f) * halfSize, Vector3(1.f, -1.f, 1.f) * halfSize, Vector3(1.f, 1.f, 1.f) * halfSize, Vector3(1.f, 1.f, -1.f) * halfSize,
-		// Top
-		Vector3(-1.f, 1.f, -1.f) * halfSize, Vector3(1.f, 1.f, -1.f) * halfSize, Vector3(1.f, 1.f, 1.f) * halfSize, Vector3(-1.f, 1.f, 1.f) * halfSize,
-		// Bottom
-		Vector3(-1.f, -1.f, -1.f) * halfSize, Vector3(1.f, -1.f, -1.f) * halfSize, Vector3(1.f, -1.f, 1.f) * halfSize, Vector3(-1.f, -1.f, 1.f) * halfSize
-	};
-
-	i = {
-			0, 1, 2, 0, 2, 3, // Right
-			4, 6, 5, 4, 7, 6, // Front
-			8, 9, 10, 8, 10, 11, // Back
-			12, 14, 13, 12, 15, 14, // Left
-			16, 18, 17, 16, 19, 18, // Top
-			20, 21, 22, 20, 22, 23  // Bottom
-	};
+	std::transform(cubeMeshPositions.begin(), cubeMeshPositions.end(), std::back_inserter(v), [&](auto& p) { return p * halfSize; });
+	std::transform(cubeMeshIndice.begin(), cubeMeshIndice.end(), std::back_inserter(i), [&](auto& p) { return p; });
 
 	// 화살표 메시 (기즈모 용)
 	Mesh& arrow = CreateMesh(GameEngine::ArrowMesh);
