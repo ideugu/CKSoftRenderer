@@ -14,9 +14,9 @@ const std::string GameEngine::LeftLegBone("LeftLegBone");
 const std::string GameEngine::RightLegBone("RightLegBone");
 
 // 메시
-const std::size_t GameEngine::CharacterMesh = std::hash<std::string>()("SK_Steve");;
-const std::size_t GameEngine::ArrowMesh = std::hash<std::string>()("SM_Arrow");;
-const std::size_t GameEngine::PlaneMesh = std::hash<std::string>()("SM_Plane");;
+const std::size_t GameEngine::CharacterMesh = std::hash<std::string>()("SK_Steve");
+const std::size_t GameEngine::ArrowMesh = std::hash<std::string>()("SM_Arrow");
+const std::size_t GameEngine::PlaneMesh = std::hash<std::string>()("SM_Plane");
 
 // 게임 오브젝트
 const std::string GameEngine::PlayerGo("Player");
