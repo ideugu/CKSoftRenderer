@@ -52,6 +52,7 @@ private:
 public: // 주요 키 값
 	// 메시
 	static const std::size_t CubeMesh;
+	static const std::size_t ArrowMesh;
 
 	// 게임 오브젝트
 	static const std::string PlayerGo;

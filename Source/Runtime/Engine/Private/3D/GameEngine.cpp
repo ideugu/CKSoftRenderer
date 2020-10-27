@@ -4,7 +4,8 @@
 using namespace CK::DDD;
 
 // 메시
-const std::size_t GameEngine::CubeMesh = std::hash<std::string>()("SM_Cube");;
+const std::size_t GameEngine::CubeMesh = std::hash<std::string>()("SM_Cube");
+const std::size_t GameEngine::ArrowMesh = std::hash<std::string>()("SM_Arrow");
 
 // 게임 오브젝트
 const std::string GameEngine::PlayerGo("Player");
@@ -92,6 +93,16 @@ bool GameEngine::LoadResources()
 			16, 18, 17, 16, 19, 18, // Top
 			20, 21, 22, 20, 22, 23  // Bottom
 	};
+
+	// 화살표 메시 (기즈모 용)
+	Mesh& arrow = CreateMesh(GameEngine::ArrowMesh);
+	arrow.GetVertices().resize(arrowPositions.size());
+	arrow.GetIndices().resize(arrowIndice.size());
+	arrow.GetColors().resize(arrowPositions.size());
+	std::copy(arrowPositions.begin(), arrowPositions.end(), arrow.GetVertices().begin());
+	std::copy(arrowIndice.begin(), arrowIndice.end(), arrow.GetIndices().begin());
+	std::fill(arrow.GetColors().begin(), arrow.GetColors().end(), LinearColor::Gray);
+
 
 	// 텍스쳐 로딩
 	Texture& diffuseTexture = CreateTexture(GameEngine::DiffuseTexture, GameEngine::SteveTexturePath);
