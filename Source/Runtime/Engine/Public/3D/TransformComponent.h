@@ -13,10 +13,10 @@ public:
 public:
 	void SetPosition(const Vector3 & InPosition) { _Position = InPosition; }
 	void AddPosition(const Vector3 & InDeltaPosition) { _Position += InDeltaPosition; }
-	void AddYawRotation(float InDegree) { _Rotation.Yaw += InDegree; _Rotation.Clamp(); CalculateLocalAxis(); }
-	void AddRollRotation(float InDegree) { _Rotation.Roll += InDegree; _Rotation.Clamp(); CalculateLocalAxis(); }
-	void AddPitchRotation(float InDegree) { _Rotation.Pitch += InDegree; _Rotation.Clamp(); CalculateLocalAxis(); }
-	void SetRotation(const Rotator & InRotation) { _Rotation = InRotation; CalculateLocalAxis(); }
+	void AddYawRotation(float InDegree) { _Rotation.Yaw += InDegree; Update(); }
+	void AddRollRotation(float InDegree) { _Rotation.Roll += InDegree; Update(); }
+	void AddPitchRotation(float InDegree) { _Rotation.Pitch += InDegree; Update(); }
+	void SetRotation(const Rotator & InRotation) { _Rotation = InRotation; Update(); }
 	void SetScale(const Vector3 & InScale) { _Scale = InScale; }
 
 	Vector3 GetPosition() const { return _Position; }
@@ -35,7 +35,7 @@ public:
 	}
 
 private:
-	FORCEINLINE void CalculateLocalAxis();
+	FORCEINLINE void Update();
 
 	Vector3 _Position = Vector3::Zero;
 	Rotator _Rotation;
@@ -56,16 +56,10 @@ FORCEINLINE Matrix4x4 TransformComponent::GetModelingMatrix() const
 	);
 }
 
-FORCEINLINE void TransformComponent::CalculateLocalAxis()
+FORCEINLINE void TransformComponent::Update()
 {
-	float cy, sy, cp, sp, cr, sr;
-	Math::GetSinCos(sy, cy, _Rotation.Yaw);
-	Math::GetSinCos(sp, cp, _Rotation.Pitch);
-	Math::GetSinCos(sr, cr, _Rotation.Roll);
-
-	_Right = Vector3(cy * cr + sy * sp * sr, cp * sr, -sy * cr + cy * sp * sr);
-	_Up = Vector3(-cy * sr + sy * sp * cr, cp * cr, sy * sr + cy * sp * cr);
-	_Forward = Vector3(sy * cp, -sp, cy * cp);
+	_Rotation.Clamp();
+	_Rotation.GetLocalAxes(_Right, _Up, _Forward);
 }
 
 }
