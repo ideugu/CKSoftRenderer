@@ -73,16 +73,6 @@ bool GameEngine::LoadResources()
 	std::transform(cubeMeshPositions.begin(), cubeMeshPositions.end(), std::back_inserter(v), [&](auto& p) { return p * halfSize; });
 	std::transform(cubeMeshIndice.begin(), cubeMeshIndice.end(), std::back_inserter(i), [&](auto& p) { return p; });
 
-	// 화살표 메시 (기즈모 용)
-	Mesh& arrow = CreateMesh(GameEngine::ArrowMesh);
-	arrow.GetVertices().resize(arrowPositions.size());
-	arrow.GetIndices().resize(arrowIndice.size());
-	arrow.GetColors().resize(arrowPositions.size());
-	std::copy(arrowPositions.begin(), arrowPositions.end(), arrow.GetVertices().begin());
-	std::copy(arrowIndice.begin(), arrowIndice.end(), arrow.GetIndices().begin());
-	std::fill(arrow.GetColors().begin(), arrow.GetColors().end(), LinearColor::Gray);
-
-
 	// 텍스쳐 로딩
 	Texture& diffuseTexture = CreateTexture(GameEngine::DiffuseTexture, GameEngine::SteveTexturePath);
 	assert(diffuseTexture.IsIntialized());

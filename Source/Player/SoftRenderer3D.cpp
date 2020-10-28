@@ -4,10 +4,9 @@
 #include <random>
 using namespace CK::DDD;
 
-Rotator axisRotator;
-Vector3 rotationAxis;
-Vector3 rotationOrthoAxis;
-float rotationDegree = 0.f;
+Vector3 n;
+Vector3 right, forward;
+float thetaDegree = 0.f;
 
 // 그리드 그리기
 void SoftRenderer::DrawGizmo3D()
@@ -36,24 +35,19 @@ void SoftRenderer::DrawGizmo3D()
 	r.DrawLine(v0, v3, LinearColor::Blue);
 
 	// 회전 축 그리기
-	axisRotator.Clamp();
-	float cy = 0.f, sy = 0.f, cp = 0.f, sp = 0.f, cr = 0.f, sr = 0.f;
-	Math::GetSinCos(sy, cy, axisRotator.Yaw);
-	Math::GetSinCos(sp, cp, axisRotator.Pitch);
-	Math::GetSinCos(sr, cr, axisRotator.Roll);
-	rotationAxis = Vector3(-cy * sr + sy * sp * cr, cp * cr, sy * sr + cy * sp * cr);
-	rotationOrthoAxis = Vector3(cy * cr + sy * sp * sr, cp * sr, -sy * cr + cy * sp * sr);
+	static float axisLength = 150.f;
+	static float planeLength = 30.f;
 
-	static float axisLength = 100.f;
-	Vector2 axisTo = (viewMatRotationOnly * rotationAxis).ToVector2() * axisLength;
+	Vector2 axisTo = (viewMatRotationOnly * n).ToVector2() * axisLength;
 	Vector2 axisFrom = -axisTo;
+	Vector2 rightTo = (viewMatRotationOnly * right).ToVector2() * planeLength;
+	Vector2 rightFrom = -rightTo;
+	Vector2 forwardTo = (viewMatRotationOnly * forward).ToVector2() * planeLength;
+	Vector2 forwardFrom = -forwardTo;
 
-	// 직교한 축 그리기
-	Vector2 orthoAxisTo = (viewMatRotationOnly * rotationOrthoAxis).ToVector2() * axisLength * 0.5f;
-	Vector2 orthoAxisFrom = -orthoAxisTo;
-
-	r.DrawLine(orthoAxisFrom, orthoAxisTo, LinearColor::Blue);
 	r.DrawLine(axisFrom, axisTo, LinearColor::Red);
+	r.DrawLine(rightFrom, rightTo, LinearColor::DimGray);
+	r.DrawLine(forwardFrom, forwardTo, LinearColor::DimGray);
 }
 
 // 게임 로직
@@ -65,12 +59,15 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 
 	// 기본 설정 변수
 	static float rotateSpeed = 180.f;
+	static Rotator axisRotator;
 
 	// 입력에 따른 회전축의 설정
 	axisRotator.Yaw += -input.GetAxis(InputAxis::XAxis) * rotateSpeed * InDeltaSeconds;
 	axisRotator.Pitch += -input.GetAxis(InputAxis::YAxis) * rotateSpeed * InDeltaSeconds;
 	axisRotator.Roll += input.GetAxis(InputAxis::ZAxis) * rotateSpeed * InDeltaSeconds;
-	rotationDegree = Math::FMod(rotationDegree + input.GetAxis(InputAxis::XAxis) * rotateSpeed * InDeltaSeconds, 360.f);
+	axisRotator.Clamp();
+	axisRotator.GetLocalAxes(right, n, forward);
+	thetaDegree = Math::FMod(thetaDegree + input.GetAxis(InputAxis::WAxis) * rotateSpeed * InDeltaSeconds, 360.f);
 }
 
 // 캐릭터 애니메이션 로직
@@ -83,6 +80,7 @@ void SoftRenderer::LateUpdate3D(float InDeltaSeconds)
 void SoftRenderer::Render3D()
 {
 	const GameEngine& g = Get3DGameEngine();
+	auto& r = GetRenderer();
 
 	const CameraObject& mainCamera = g.GetMainCamera();
 	const Matrix4x4 vMatrix = mainCamera.GetViewMatrix();
@@ -104,8 +102,14 @@ void SoftRenderer::Render3D()
 		const Mesh& mesh = g.GetMesh(gameObject.GetMeshKey());
 
 		// 최종 변환 행렬
-		Matrix4x4 finalMatrix = vMatrix * transform.GetModelingMatrix();
-		DrawMesh3D(mesh, vMatrix, gameObject.GetTransform().GetScale(), gameObject.GetColor());
+		Matrix4x4 finalMatrix = vMatrix;
+		DrawMesh3D(mesh, finalMatrix, gameObject.GetTransform().GetScale(), gameObject.GetColor());
+
+		if (gameObject == GameEngine::PlayerGo)
+		{
+			r.PushStatisticText("Axis : " + n.ToString());
+			r.PushStatisticText("Degree : " + std::to_string(thetaDegree));
+		}
 	}
 }
 
@@ -137,11 +141,11 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 	for (Vertex3D& v : vertices)
 	{
 		float sin = 0.f, cos = 0.f;
-		Math::GetSinCos(sin, cos, rotationDegree);
+		Math::GetSinCos(sin, cos, thetaDegree);
 		Vector3 u = v.Position.ToVector3();
-		float udotn = u.Dot(rotationAxis);
-		Vector3 ncrossu = rotationAxis.Cross(u);
-		Vector3 result = Vector3(u * cos + rotationAxis * ((1.f - cos) * udotn) + ncrossu * sin) * InScale;
+		float udotn = u.Dot(n);
+		Vector3 ncrossu = n.Cross(u);
+		Vector3 result = Vector3(u * cos + n * ((1.f - cos) * udotn) + ncrossu * sin) * InScale;
 		v.Position = InMatrix * Vector4(result);
 	}
 
