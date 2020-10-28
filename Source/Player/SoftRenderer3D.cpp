@@ -45,7 +45,7 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	// 게임 로직에서 사용할 게임 오브젝트 레퍼런스
 	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
 	Rotator r = goPlayer.GetTransform().GetRotation();
-	if (input.IsPressing(InputButton::Space))
+	if (input.IsPressed(InputButton::Space))
 	{
 		r.Pitch = -90.f;
 	}
