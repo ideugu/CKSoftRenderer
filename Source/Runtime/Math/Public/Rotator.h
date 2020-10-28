@@ -26,6 +26,18 @@ public:
 		return angle;
 	}
 
+	FORCEINLINE void GetLocalAxes(Vector3& OutRight, Vector3& OutUp, Vector3& OutForward)
+	{
+		float cy = 0.f, sy = 0.f, cp = 0.f, sp = 0.f, cr = 0.f, sr = 0.f;
+		Math::GetSinCos(sy, cy, Yaw);
+		Math::GetSinCos(sp, cp, Pitch);
+		Math::GetSinCos(sr, cr, Roll);
+
+		OutRight = Vector3(cy * cr + sy * sp * sr, cp * sr, -sy * cr + cy * sp * sr);
+		OutUp = Vector3(-cy * sr + sy * sp * cr, cp * cr, sy * sr + cy * sp * cr);
+		OutForward = Vector3(sy * cp, -sp, cy * cp);
+	}
+
 	std::string ToString() const;
 	static const Rotator Identity;
 
