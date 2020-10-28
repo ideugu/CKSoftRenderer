@@ -45,7 +45,14 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	// 게임 로직에서 사용할 게임 오브젝트 레퍼런스
 	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
 	Rotator r = goPlayer.GetTransform().GetRotation();
-	r.Pitch = input.IsPressing(InputButton::Space) ? -90.f : 0.f;
+	if (input.IsPressing(InputButton::Space))
+	{
+		r.Pitch = -90.f;
+	}
+	else
+	{
+		r.Pitch += input.GetAxis(InputAxis::ZAxis)* rotateSpeed* InDeltaSeconds;
+	}
 	r.Roll += input.GetAxis(InputAxis::XAxis) * rotateSpeed * InDeltaSeconds;
 	r.Yaw += input.GetAxis(InputAxis::YAxis) * rotateSpeed * InDeltaSeconds;
 	goPlayer.GetTransform().SetRotation(r);
@@ -61,6 +68,7 @@ void SoftRenderer::LateUpdate3D(float InDeltaSeconds)
 void SoftRenderer::Render3D()
 {
 	const GameEngine& g = Get3DGameEngine();
+	auto& r = GetRenderer();
 
 	const CameraObject& mainCamera = g.GetMainCamera();
 	const Matrix4x4 pvMatrix = mainCamera.GetPerspectiveViewMatrix();
@@ -84,6 +92,14 @@ void SoftRenderer::Render3D()
 		// 최종 변환 행렬
 		Matrix4x4 finalMatrix = pvMatrix * transform.GetModelingMatrix();
 		DrawMesh3D(mesh, finalMatrix, gameObject.GetColor());
+
+		if (gameObject == GameEngine::PlayerGo)
+		{
+			Rotator rotator = gameObject.GetTransform().GetRotation();
+			r.PushStatisticText("Yaw : " + std::to_string(rotator.Yaw));
+			r.PushStatisticText("Roll : " + std::to_string(rotator.Roll));
+			r.PushStatisticText("Pitch : " + std::to_string(rotator.Pitch));
+		}
 	}
 }
 
