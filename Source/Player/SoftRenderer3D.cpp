@@ -33,6 +33,8 @@ void SoftRenderer::DrawGizmo3D()
 
 }
 
+bool toggleDepthTesting = true;
+
 // 게임 로직
 void SoftRenderer::Update3D(float InDeltaSeconds)
 {
@@ -56,6 +58,11 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	camera.SetLookAtRotation(playerTransform.GetPosition());
 	float deltaFOV = input.GetAxis(InputAxis::WAxis)* moveSpeed* InDeltaSeconds;
 	camera.SetFOV(Math::Clamp(camera.GetFOV() + deltaFOV, 15.f, 150.f));
+
+	if (input.IsReleased(InputButton::Space))
+	{
+		toggleDepthTesting = !toggleDepthTesting;
+	}
 }
 
 // 캐릭터 애니메이션 로직
@@ -265,6 +272,23 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 					// 투영 보정보간에 사용할 공통 분모
 					float z = invZ0 * oneMinusST + invZ1 * s + invZ2 * t;
 					float invZ = 1.f / z;
+
+					// 깊이 버퍼 테스팅
+					if (toggleDepthTesting)
+					{
+						float newDepth = (InVertices[0].Position.Z * oneMinusST * invZ0 + InVertices[1].Position.Z * s * invZ1 + InVertices[2].Position.Z * t * invZ2) * invZ;
+						float prevDepth = r.GetDepthBufferValue(fragment);
+						if (newDepth < prevDepth)
+						{
+							// 픽셀을 처리하기 전 깊이 값을 버퍼에 보관
+							r.SetDepthBufferValue(fragment, newDepth);
+						}
+						else
+						{
+							// 이미 앞에 무언가 그려져있으므로 픽셀그리기는 생략
+							continue;
+						}
+					}
 
 					// 최종 보정보간된 UV 좌표
 					Vector2 targetUV = (InVertices[0].UV * oneMinusST * invZ0 + InVertices[1].UV * s * invZ1 + InVertices[2].UV * t * invZ2) * invZ;
