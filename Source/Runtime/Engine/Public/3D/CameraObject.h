@@ -18,23 +18,30 @@ public:
 
 	// 카메라 값을 가져오는 함수
 	float GetFOV() const { return _FOV; }
-	void SetLookAtRotation(const Vector3& InTargetPosition, const Vector3& InUp = Vector3::UnitY);
+	float GetNearZ() const { return _NearZ; }
+	float GetFarZ() const { return _FarZ; }
 	const ScreenPoint& GetViewportSize() const { return _ViewportSize; }
 
 	// 카메라 값을 설정하는 함수
+	void SetLookAtRotation(const Vector3& InTargetPosition, const Vector3& InUp = Vector3::UnitY);
 	void SetFOV(float InFOV) { _FOV = InFOV; }
+	void SetNearZ(float InNearZ) { _NearZ = InNearZ; }
+	void SetFarZ(float InFarZ) { _FarZ = InFarZ; }
 	void SetViewportSize(const ScreenPoint& InViewportSize) { _ViewportSize = InViewportSize; }
 
 	// 행렬 생성
 	FORCEINLINE void GetViewAxes(Vector3& OutViewX, Vector3& OutViewY, Vector3& OutViewZ) const;
 	FORCEINLINE Matrix4x4 GetViewMatrix() const;
-	FORCEINLINE Matrix4x4 GetPerspectiveMatrix() const;
 	FORCEINLINE Matrix4x4 GetViewMatrixRotationOnly() const;
+	FORCEINLINE Matrix4x4 GetPerspectiveMatrix() const;
+	FORCEINLINE Matrix4x4 GetPerspectiveViewMatrix() const;
 
 private:
 	TransformComponent _Transform;
 
 	float _FOV = 60.f;
+	float _NearZ = 5.5f;
+	float _FarZ = 5000.f;
 	ScreenPoint _ViewportSize;
 };
 
@@ -74,14 +81,43 @@ FORCEINLINE Matrix4x4 CameraObject::GetViewMatrixRotationOnly() const
 
 FORCEINLINE Matrix4x4 CameraObject::GetPerspectiveMatrix() const
 {
+	// 투영 행렬. 깊이 값의 범위는 -1~1
 	float invA = 1.f / _ViewportSize.AspectRatio();
 	float d = 1.f / tanf(Math::Deg2Rad(_FOV) * 0.5f);
 
+	// 근평면과 원평면에 반대 부호를 붙여서 계산
+	float invNF = 1.f / (_NearZ - _FarZ);
+	float k = (_FarZ + _NearZ) * invNF;
+	float l = 2.f * _FarZ * _NearZ * invNF;
 	return Matrix4x4(
 		Vector4::UnitX * invA * d,
 		Vector4::UnitY * d,
-		Vector4(0.f, 0.f, -1.f, 0.f),
-		Vector4(0.f, 0.f, 0, 1.f));
+		Vector4(0.f, 0.f, k, -1.f),
+		Vector4(0.f, 0.f, l, 0.f));
+}
+
+FORCEINLINE Matrix4x4 CameraObject::GetPerspectiveViewMatrix() const
+{
+	// 뷰 행렬 관련 요소
+	Vector3 viewX, viewY, viewZ;
+	GetViewAxes(viewX, viewY, viewZ);
+	Vector3 pos = _Transform.GetPosition();
+	float zPos = viewZ.Dot(pos);
+
+	// 투영 행렬 관련 요소
+	float invA = 1.f / _ViewportSize.AspectRatio();
+	float d = 1.f / tanf(Math::Deg2Rad(_FOV) * 0.5f);
+	float dx = invA * d;
+	float invNF = 1.f / (_NearZ - _FarZ);
+	float k = (_FarZ + _NearZ) * invNF;
+	float l = 2.f * _FarZ * _NearZ * invNF;
+
+	return Matrix4x4(
+		Vector4(dx * viewX.X, d * viewY.X, k * viewZ.X, -viewZ.X),
+		Vector4(dx * viewX.Y, d * viewY.Y, k * viewZ.Y, -viewZ.Y),
+		Vector4(dx * viewX.Z, d * viewY.Z, k * viewZ.Z, -viewZ.Z),
+		Vector4(-dx * viewX.Dot(pos), -d * viewY.Dot(pos), -k * zPos + l, zPos)
+	);
 }
 
 }

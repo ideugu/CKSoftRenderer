@@ -19,6 +19,7 @@ void SoftRenderer::DrawGizmo3D()
 	};
 
 	Matrix4x4 viewMatRotationOnly = g.GetMainCamera().GetViewMatrixRotationOnly();
+	Matrix4x4 pvMatrix = g.GetMainCamera().GetPerspectiveViewMatrix();
 	VertexShader3D(viewGizmo, viewMatRotationOnly);
 
 	// 축 그리기
@@ -70,8 +71,7 @@ void SoftRenderer::Render3D()
 	auto& r = GetRenderer();
 
 	const CameraObject& mainCamera = g.GetMainCamera();
-	const Matrix4x4 vMatrix = mainCamera.GetViewMatrix();
-	const Matrix4x4 pMatrix = mainCamera.GetPerspectiveMatrix();
+	const Matrix4x4 pvMatrix = mainCamera.GetPerspectiveViewMatrix();
 	const ScreenPoint viewportSize = mainCamera.GetViewportSize();
 
 	// 기즈모 그리기
@@ -90,7 +90,7 @@ void SoftRenderer::Render3D()
 		const Mesh& mesh = g.GetMesh(gameObject.GetMeshKey());
 
 		// 최종 변환 행렬
-		Matrix4x4 finalMatrix = pMatrix * vMatrix * transform.GetModelingMatrix();
+		Matrix4x4 finalMatrix = pvMatrix * transform.GetModelingMatrix();
 		DrawMesh3D(mesh, finalMatrix, gameObject.GetColor());
 	}
 	
@@ -149,12 +149,12 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 	for (auto& v : InVertices)
 	{
 		// 무한 원점인 경우, 약간 보정해준다.
-		if (v.Position.Z == 0.f) v.Position.Z = SMALL_NUMBER;
+		if (v.Position.W == 0.f) v.Position.W = SMALL_NUMBER;
 
-		float invZ = 1.f / v.Position.Z;
-		v.Position.X *= invZ;
-		v.Position.Y *= invZ;
-		v.Position.Z *= invZ;
+		float invW = 1.f / v.Position.W;
+		v.Position.X *= invW;
+		v.Position.Y *= invW;
+		v.Position.Z *= invW;
 	}
 
 	// 백페이스 컬링 ( 뒷면이면 그리기 생략 )
