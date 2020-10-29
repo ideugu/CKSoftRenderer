@@ -92,8 +92,22 @@ void SoftRenderer::Render3D()
 		// 최종 변환 행렬
 		Matrix4x4 finalMatrix = pvMatrix * transform.GetModelingMatrix();
 		DrawMesh3D(mesh, finalMatrix, gameObject.GetColor());
+
+		if (gameObject == GameEngine::PlayerGo)
+		{
+			// 플레이어 관련 깊이와 카메라로부터의 거리
+			Vector4 clippedPos = pvMatrix * Vector4(transform.GetPosition());
+			float cameraDepth = clippedPos.W;
+			if (cameraDepth == 0) cameraDepth = SMALL_NUMBER;
+			float ndcZ = clippedPos.Z / cameraDepth;
+
+			r.PushStatisticText("Player: " + transform.GetPosition().ToString());
+			r.PushStatisticText("Depth: " + std::to_string(ndcZ));
+			r.PushStatisticText("Distance: " + std::to_string(clippedPos.W));
+		}
 	}
 	
+	r.PushStatisticText("Camera: " + mainCamera.GetTransform().GetPosition().ToString());
 	r.PushStatisticText("FOV : " + std::to_string(mainCamera.GetFOV()));
 }
 
