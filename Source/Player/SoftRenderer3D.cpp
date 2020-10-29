@@ -33,7 +33,7 @@ void SoftRenderer::DrawGizmo3D()
 
 }
 
-bool toggleDepthTesting = true;
+bool useLinearVisualization = false;
 
 // 게임 로직
 void SoftRenderer::Update3D(float InDeltaSeconds)
@@ -61,7 +61,7 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 
 	if (input.IsReleased(InputButton::Space))
 	{
-		toggleDepthTesting = !toggleDepthTesting;
+		useLinearVisualization = !useLinearVisualization;
 	}
 }
 
@@ -274,25 +274,40 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 					float invZ = 1.f / z;
 
 					// 깊이 버퍼 테스팅
-					if (toggleDepthTesting)
+					float newDepth = (InVertices[0].Position.Z * oneMinusST * invZ0 + InVertices[1].Position.Z * s * invZ1 + InVertices[2].Position.Z * t * invZ2) * invZ;
+					float prevDepth = r.GetDepthBufferValue(fragment);
+					if (newDepth < prevDepth)
 					{
-						float newDepth = (InVertices[0].Position.Z * oneMinusST * invZ0 + InVertices[1].Position.Z * s * invZ1 + InVertices[2].Position.Z * t * invZ2) * invZ;
-						float prevDepth = r.GetDepthBufferValue(fragment);
-						if (newDepth < prevDepth)
-						{
-							// 픽셀을 처리하기 전 깊이 값을 버퍼에 보관
-							r.SetDepthBufferValue(fragment, newDepth);
-						}
-						else
-						{
-							// 이미 앞에 무언가 그려져있으므로 픽셀그리기는 생략
-							continue;
-						}
+						// 픽셀을 처리하기 전 깊이 값을 버퍼에 보관
+						r.SetDepthBufferValue(fragment, newDepth);
+					}
+					else
+					{
+						// 이미 앞에 무언가 그려져있으므로 픽셀그리기는 생략
+						continue;
 					}
 
-					// 최종 보정보간된 UV 좌표
-					Vector2 targetUV = (InVertices[0].UV * oneMinusST * invZ0 + InVertices[1].UV * s * invZ1 + InVertices[2].UV * t * invZ2) * invZ;
-					r.DrawPoint(fragment, FragmentShader3D(mainTexture.GetSample(targetUV), LinearColor::White));
+					if (IsDepthBufferDrawing())
+					{
+						float grayScale = (newDepth + 1.f) * 0.5f;
+						if (useLinearVisualization)
+						{
+							float n = g.GetMainCamera().GetNearZ();
+							float f = g.GetMainCamera().GetFarZ();
+
+							// 시각화를 위해 선형화된 흑백 값으로 변환
+							grayScale = (invZ - n) / (f - n);
+						}
+
+						// 뎁스 버퍼 그리기
+						r.DrawPoint(fragment, LinearColor::White * grayScale);
+					}
+					else
+					{
+						// 최종 보정보간된 UV 좌표
+						Vector2 targetUV = (InVertices[0].UV * oneMinusST * invZ0 + InVertices[1].UV * s * invZ1 + InVertices[2].UV * t * invZ2) * invZ;
+						r.DrawPoint(fragment, FragmentShader3D(mainTexture.GetSample(targetUV), LinearColor::White));
+					}
 				}
 			}
 		}
