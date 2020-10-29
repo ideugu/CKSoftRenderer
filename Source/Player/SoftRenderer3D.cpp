@@ -257,7 +257,17 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 				float oneMinusST = 1.f - s - t;
 				if (((s >= 0.f) && (s <= 1.f)) && ((t >= 0.f) && (t <= 1.f)) && ((oneMinusST >= 0.f) && (oneMinusST <= 1.f)))
 				{
-					Vector2 targetUV = InVertices[0].UV * oneMinusST + InVertices[1].UV * s + InVertices[2].UV * t;
+					// 각 점마다 보존된 뷰 공간의 z값
+					float invZ0 = 1.f / InVertices[0].Position.W;
+					float invZ1 = 1.f / InVertices[1].Position.W;
+					float invZ2 = 1.f / InVertices[2].Position.W;
+
+					// 투영 보정보간에 사용할 공통 분모
+					float z = invZ0 * oneMinusST + invZ1 * s + invZ2 * t;
+					float invZ = 1.f / z;
+
+					// 최종 보정보간된 UV 좌표
+					Vector2 targetUV = (InVertices[0].UV * oneMinusST * invZ0 + InVertices[1].UV * s * invZ1 + InVertices[2].UV * t * invZ2) * invZ;
 					r.DrawPoint(fragment, FragmentShader3D(mainTexture.GetSample(targetUV), LinearColor::White));
 				}
 			}
