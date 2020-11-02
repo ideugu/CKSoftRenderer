@@ -78,35 +78,17 @@ void SoftRenderer::Render3D()
 	auto& r = GetRenderer();
 
 	const CameraObject& mainCamera = g.GetMainCamera();
-	const Matrix4x4 vMatrix = mainCamera.GetViewMatrix();
-	const Matrix4x4 pMatrix = mainCamera.GetPerspectiveMatrix();
 	const Matrix4x4 pvMatrix = mainCamera.GetPerspectiveViewMatrix();
 	const ScreenPoint viewportSize = mainCamera.GetViewportSize();
 
 	// 기즈모 그리기
 	DrawGizmo3D();
 
-	// 절두체 구축을 위한 투영 행렬의 설정
-	Matrix4x4 ptMatrix = pMatrix.Tranpose();
-
 	// 절두체 컬링 테스트를 위한 통계 변수
 	size_t totalObjects = g.GetScene().size();
 	size_t culledObjects = 0;
 	size_t intersectedObjects = 0;
 	size_t renderedObjects = 0;
-
-	// 절두체를 구성하는 평면의 방정식
-	std::array<Plane, 6> frustumPlanes = {
-		Plane(-(ptMatrix[3] - ptMatrix[1])), // +Y
-		Plane(-(ptMatrix[3] + ptMatrix[1])), // -Y
-		Plane(-(ptMatrix[3] - ptMatrix[0])), // +X
-		Plane(-(ptMatrix[3] + ptMatrix[0])), // -X
-		Plane(-(ptMatrix[3] - ptMatrix[2])),  // +Z
-		Plane(-(ptMatrix[3] + ptMatrix[2])), // -Z
-	};
-
-	// 절두체 선언
-	Frustum frustumFromMatrix(frustumPlanes);
 
 	for (auto it = g.SceneBegin(); it != g.SceneEnd(); ++it)
 	{
@@ -117,14 +99,29 @@ void SoftRenderer::Render3D()
 			continue;
 		}
 
+		// 최종 변환 행렬
+		Matrix4x4 finalMatrix = pvMatrix * transform.GetModelingMatrix();
+
+		// 최종 변환 행렬로부터 평면의 방정식과 절두체 생성
+		Matrix4x4 finalTranposedMatrix = finalMatrix.Tranpose();
+		std::array<Plane, 6> frustumPlanesFromMatrix = {
+			Plane(-(finalTranposedMatrix[3] - finalTranposedMatrix[1])), // up
+			Plane(-(finalTranposedMatrix[3] + finalTranposedMatrix[1])), // bottom
+			Plane(-(finalTranposedMatrix[3] - finalTranposedMatrix[0])), // right
+			Plane(-(finalTranposedMatrix[3] + finalTranposedMatrix[0])), // left 
+			Plane(-(finalTranposedMatrix[3] - finalTranposedMatrix[2])),  // far
+			Plane(-(finalTranposedMatrix[3] + finalTranposedMatrix[2])), // near
+		};
+		Frustum frustumFromMatrix(frustumPlanesFromMatrix);
+
+		// 메시 정보 얻어오기
 		const Mesh& mesh = g.GetMesh(gameObject.GetMeshKey());
 		LinearColor finalColor = gameObject.GetColor();
 
-		// 바운딩 영역의 크기를 트랜스폼에 맞게 조정
+		// 바운딩 영역은 로컬 정보를 그대로 사용
 		Sphere sphereBound = mesh.GetSphereBound();
-		sphereBound.Radius *= transform.GetScale().Max();
-		sphereBound.Center = (vMatrix * Vector4(transform.GetPosition())).ToVector3();
 
+		// 절두체에서 로컬 바운딩 정보로 판정
 		auto checkResult = frustumFromMatrix.CheckBound(sphereBound);
 		if (checkResult == BoundCheckResult::Outside)
 		{
@@ -138,8 +135,7 @@ void SoftRenderer::Render3D()
 			finalColor = LinearColor::Red;
 		}
 
-		// 최종 변환 행렬
-		Matrix4x4 finalMatrix = pvMatrix * transform.GetModelingMatrix();
+		// 메시 그리기
 		DrawMesh3D(mesh, finalMatrix, finalColor);
 
 		// 그린 물체를 통계에 포함
