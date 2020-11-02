@@ -119,10 +119,10 @@ void SoftRenderer::Render3D()
 		LinearColor finalColor = gameObject.GetColor();
 
 		// 바운딩 영역은 로컬 정보를 그대로 사용
-		Sphere sphereBound = mesh.GetSphereBound();
+		const Box& boxBound = mesh.GetBoxBound();
 
 		// 절두체에서 로컬 바운딩 정보로 판정
-		auto checkResult = frustumFromMatrix.CheckBound(sphereBound);
+		auto checkResult = frustumFromMatrix.CheckBound(boxBound);
 		if (checkResult == BoundCheckResult::Outside)
 		{
 			culledObjects++;
