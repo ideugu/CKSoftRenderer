@@ -134,6 +134,9 @@ void SoftRenderer::Render3D()
 		// 최종 변환 행렬
 		Matrix4x4 finalMatrix = pvMatrix * transform.GetModelingMatrix();
 		DrawMesh3D(mesh, finalMatrix, gameObject.GetColor());
+
+		// 그린 물체를 통계에 포함
+		renderedObjects++;
 	}
 	
 	r.PushStatisticText("Total GameObjects : " + std::to_string(totalObjects));
