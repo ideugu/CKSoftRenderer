@@ -88,6 +88,9 @@ bool GameEngine::LoadResources()
 		Vector2(16.f, 64.f) / 64.f, Vector2(24.f, 64.f) / 64.f, Vector2(24.f, 56.f) / 64.f, Vector2(16.f, 56.f) / 64.f
 	};
 
+	// 메시의 바운딩 볼륨 생성
+	cubeMesh.CalculateBounds();
+
 	// 텍스쳐 로딩
 	Texture& diffuseTexture = CreateTexture(GameEngine::DiffuseTexture, GameEngine::SteveTexturePath);
 	assert(diffuseTexture.IsIntialized());
@@ -106,11 +109,11 @@ bool GameEngine::LoadScene()
 	goPlayer.GetTransform().SetPosition(Vector3::Zero);
 	goPlayer.GetTransform().SetScale(Vector3::One * cubeScale);
 	goPlayer.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
-	goPlayer.SetColor(LinearColor::Blue);
+	goPlayer.SetColor(LinearColor::White);
 
 	// 고정 시드로 랜덤하게 생성
 	std::mt19937 generator(0);
-	std::uniform_real_distribution<float> distZ(-3000.f, 3000.f);
+	std::uniform_real_distribution<float> distZ(1000.f, 3000.f);
 	std::uniform_real_distribution<float> distXY(-3000.f, 3000.f);
 
 	// 500개의 배경 게임 오브젝트 생성
@@ -123,7 +126,7 @@ bool GameEngine::LoadScene()
 		newGo.GetTransform().SetScale(Vector3::One * cubeScale);
 		newGo.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
 		newGo.SetMesh(GameEngine::CubeMesh);
-		newGo.SetColor(LinearColor::Blue);
+		newGo.SetColor(LinearColor::White);
 	}
 
 	// 카메라 설정

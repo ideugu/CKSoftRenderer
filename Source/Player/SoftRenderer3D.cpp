@@ -92,6 +92,7 @@ void SoftRenderer::Render3D()
 	// 절두체 컬링 테스트를 위한 통계 변수
 	size_t totalObjects = g.GetScene().size();
 	size_t culledObjects = 0;
+	size_t intersectedObjects = 0;
 	size_t renderedObjects = 0;
 
 	// 절두체를 구성하는 평면의 방정식
@@ -116,21 +117,30 @@ void SoftRenderer::Render3D()
 			continue;
 		}
 
-		// 뷰 공간의 위치 계산
-		Vector4 viewPos = vMatrix * Vector4(transform.GetPosition());
-		if (frustumFromMatrix.CheckBound(viewPos.ToVector3()) == BoundCheckResult::Outside)
+		const Mesh& mesh = g.GetMesh(gameObject.GetMeshKey());
+		LinearColor finalColor = gameObject.GetColor();
+
+		// 바운딩 영역의 크기를 트랜스폼에 맞게 조정
+		Sphere sphereBound = mesh.GetSphereBound();
+		sphereBound.Radius *= transform.GetScale().Max();
+		sphereBound.Center = (vMatrix * Vector4(transform.GetPosition())).ToVector3();
+
+		auto checkResult = frustumFromMatrix.CheckBound(sphereBound);
+		if (checkResult == BoundCheckResult::Outside)
 		{
-			// 그리지 않고 건너뜀
 			culledObjects++;
 			continue;
 		}
-
-		// 렌더링 시작
-		const Mesh& mesh = g.GetMesh(gameObject.GetMeshKey());
+		else if (checkResult == BoundCheckResult::Intersect)
+		{
+			// 겹친 게임 오브젝트를 통계에 포함
+			intersectedObjects++;
+			finalColor = LinearColor::Red;
+		}
 
 		// 최종 변환 행렬
 		Matrix4x4 finalMatrix = pvMatrix * transform.GetModelingMatrix();
-		DrawMesh3D(mesh, finalMatrix, gameObject.GetColor());
+		DrawMesh3D(mesh, finalMatrix, finalColor);
 
 		// 그린 물체를 통계에 포함
 		renderedObjects++;
@@ -138,6 +148,7 @@ void SoftRenderer::Render3D()
 	
 	r.PushStatisticText("Total GameObjects : " + std::to_string(totalObjects));
 	r.PushStatisticText("Culled GameObjects : " + std::to_string(culledObjects));
+	r.PushStatisticText("Intersected GameObjects : " + std::to_string(intersectedObjects));
 	r.PushStatisticText("Rendered GameObjects : " + std::to_string(renderedObjects));
 }
 
@@ -329,7 +340,7 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 					{
 						// 최종 보정보간된 UV 좌표
 						Vector2 targetUV = (InVertices[0].UV * oneMinusST * invZ0 + InVertices[1].UV * s * invZ1 + InVertices[2].UV * t * invZ2) * invZ;
-						r.DrawPoint(fragment, FragmentShader3D(mainTexture.GetSample(targetUV), LinearColor::White));
+						r.DrawPoint(fragment, FragmentShader3D(mainTexture.GetSample(targetUV), InColor));
 					}
 				}
 			}
