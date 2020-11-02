@@ -78,11 +78,37 @@ void SoftRenderer::Render3D()
 	auto& r = GetRenderer();
 
 	const CameraObject& mainCamera = g.GetMainCamera();
+	const Matrix4x4 vMatrix = mainCamera.GetViewMatrix();
 	const Matrix4x4 pvMatrix = mainCamera.GetPerspectiveViewMatrix();
 	const ScreenPoint viewportSize = mainCamera.GetViewportSize();
 
 	// 기즈모 그리기
 	DrawGizmo3D();
+
+	// 절두체 구축을 위한 카메라의 설정
+	float nearZ = mainCamera.GetNearZ();
+	float farZ = mainCamera.GetFarZ();
+	float halfFOV = mainCamera.GetFOV() * 0.5f;
+	float pSin = 0.f, pCos = 0.f;
+	Math::GetSinCos(pSin, pCos, halfFOV);
+
+	// 절두체 컬링 테스트를 위한 통계 변수
+	size_t totalObjects = g.GetScene().size();
+	size_t culledObjects = 0;
+	size_t renderedObjects = 0;
+
+	// 절두체를 구성하는 평면의 방정식
+	static std::array<Plane, 6> frustumPlanes = {
+		Plane(Vector3(pCos, 0.f, pSin), 0.f), // +Y
+		Plane(Vector3(-pCos, 0.f, pSin), 0.f), // -Y
+		Plane(Vector3(0.f, pCos, pSin), 0.f), // +X
+		Plane(Vector3(0.f, -pCos, pSin), 0.f), // -X
+		Plane(Vector3::UnitZ, nearZ), // +Z
+		Plane(-Vector3::UnitZ, -farZ) // -Z
+	};
+
+	// 절두체 선언
+	Frustum frustumInView(frustumPlanes);
 
 	for (auto it = g.SceneBegin(); it != g.SceneEnd(); ++it)
 	{
@@ -93,29 +119,26 @@ void SoftRenderer::Render3D()
 			continue;
 		}
 
+		// 뷰 공간의 위치 계산
+		Vector4 viewPos = vMatrix * Vector4(transform.GetPosition());
+		if (frustumInView.CheckBound(viewPos.ToVector3()) == BoundCheckResult::Outside)
+		{
+			// 그리지 않고 건너뜀
+			culledObjects++;
+			continue;
+		}
+
 		// 렌더링 시작
 		const Mesh& mesh = g.GetMesh(gameObject.GetMeshKey());
 
 		// 최종 변환 행렬
 		Matrix4x4 finalMatrix = pvMatrix * transform.GetModelingMatrix();
 		DrawMesh3D(mesh, finalMatrix, gameObject.GetColor());
-
-		if (gameObject == GameEngine::PlayerGo)
-		{
-			// 플레이어 관련 깊이와 카메라로부터의 거리
-			Vector4 clippedPos = pvMatrix * Vector4(transform.GetPosition());
-			float cameraDepth = clippedPos.W;
-			if (cameraDepth == 0) cameraDepth = SMALL_NUMBER;
-			float ndcZ = clippedPos.Z / cameraDepth;
-
-			r.PushStatisticText("Player: " + transform.GetPosition().ToString());
-			r.PushStatisticText("Depth: " + std::to_string(ndcZ));
-			r.PushStatisticText("Distance: " + std::to_string(clippedPos.W));
-		}
 	}
 	
-	r.PushStatisticText("Camera: " + mainCamera.GetTransform().GetPosition().ToString());
-	r.PushStatisticText("FOV : " + std::to_string(mainCamera.GetFOV()));
+	r.PushStatisticText("Total GameObjects : " + std::to_string(totalObjects));
+	r.PushStatisticText("Culled GameObjects : " + std::to_string(culledObjects));
+	r.PushStatisticText("Rendered GameObjects : " + std::to_string(renderedObjects));
 }
 
 void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, const LinearColor& InColor)

@@ -110,11 +110,11 @@ bool GameEngine::LoadScene()
 
 	// 고정 시드로 랜덤하게 생성
 	std::mt19937 generator(0);
-	std::uniform_real_distribution<float> distZ(0.f, 1500.f);
-	std::uniform_real_distribution<float> distXY(-1000.f, 1000.f);
+	std::uniform_real_distribution<float> distZ(-3000.f, 3000.f);
+	std::uniform_real_distribution<float> distXY(-3000.f, 3000.f);
 
-	// 100개의 큐브 게임 오브젝트 생성
-	for (int i = 0; i < 100; ++i)
+	// 500개의 배경 게임 오브젝트 생성
+	for (int i = 0; i < 500; ++i)
 	{
 		char name[64];
 		std::snprintf(name, sizeof(name), "GameObject%d", i);
