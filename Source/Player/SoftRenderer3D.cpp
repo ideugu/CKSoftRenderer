@@ -89,7 +89,6 @@ void SoftRenderer::Render3D()
 	// 절두체 구축을 위한 투영 행렬의 설정
 	Matrix4x4 ptMatrix = pMatrix.Tranpose();
 
-
 	// 절두체 컬링 테스트를 위한 통계 변수
 	size_t totalObjects = g.GetScene().size();
 	size_t culledObjects = 0;
@@ -106,7 +105,7 @@ void SoftRenderer::Render3D()
 	};
 
 	// 절두체 선언
-	Frustum frustumInView(frustumPlanes);
+	Frustum frustumFromMatrix(frustumPlanes);
 
 	for (auto it = g.SceneBegin(); it != g.SceneEnd(); ++it)
 	{
@@ -119,7 +118,7 @@ void SoftRenderer::Render3D()
 
 		// 뷰 공간의 위치 계산
 		Vector4 viewPos = vMatrix * Vector4(transform.GetPosition());
-		if (frustumInView.CheckBound(viewPos.ToVector3()) == BoundCheckResult::Outside)
+		if (frustumFromMatrix.CheckBound(viewPos.ToVector3()) == BoundCheckResult::Outside)
 		{
 			// 그리지 않고 건너뜀
 			culledObjects++;
