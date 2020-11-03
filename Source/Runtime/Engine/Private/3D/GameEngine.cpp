@@ -306,7 +306,6 @@ bool GameEngine::LoadScene()
 	_MainCamera.GetTransform().SetWorldPosition(Vector3(500.f, 800.f, -1000.f));
 	_MainCamera.SetParent(goCameraRig);
 	_MainCamera.SetLookAtRotation(goCameraRig);
-	auto q1 = _MainCamera.GetTransform().GetWorldRotation();
 
 	return true;
 }
