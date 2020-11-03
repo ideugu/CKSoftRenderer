@@ -23,7 +23,7 @@ public:
 	void SetViewportSize(const ScreenPoint& InViewportSize) { _ViewportSize = InViewportSize; }
 
 	// 행렬 생성
-	FORCEINLINE void GetViewAxes(Vector3& OutViewX, Vector3& OutViewY, Vector3& OutViewZ) const;
+	FORCEINLINE void GetViewAxes(Vector3& OutViewX, Vector3& OutViewY, Vector3& OutViewZ, const Vector3& InUp = Vector3::UnitY) const;
 	FORCEINLINE Matrix4x4 GetViewMatrix() const;
 	FORCEINLINE Matrix4x4 GetViewMatrixRotationOnly() const;
 	FORCEINLINE Matrix4x4 GetPerspectiveMatrix() const;
@@ -38,11 +38,27 @@ private:
 	ScreenPoint _ViewportSize;
 };
 
-FORCEINLINE void CameraObject::GetViewAxes(Vector3& OutViewX, Vector3& OutViewY, Vector3& OutViewZ) const
+FORCEINLINE void CameraObject::GetViewAxes(Vector3& OutViewX, Vector3& OutViewY, Vector3& OutViewZ, const Vector3& InUp) const
 {
+	// 로컬 Z축 값의 반대 방향을 뷰 공간의 Z축으로 설정
 	OutViewZ = -_Transform.GetLocalZ();
-	OutViewX = -_Transform.GetLocalX();
-	OutViewY = _Transform.GetLocalY();
+
+	// 로컬 Z축과 월드 Y축이 평행한 경우
+	if (Math::Abs(OutViewZ.Y) >= (1.f - SMALL_NUMBER))
+	{
+		// 로컬 X 좌표 값을 지정.
+		OutViewX = Vector3::UnitX;
+	}
+	else
+	{
+		OutViewX = InUp.Cross(OutViewZ).Normalize();
+	}
+
+	// 두 벡터가 직교하고 크기가 1이면 결과는 1을 보장
+	OutViewY = OutViewZ.Cross(OutViewX);
+
+	// 왼손 좌표계를 오른손 좌표계로 변환
+	OutViewX = -OutViewX;
 }
 
 FORCEINLINE Matrix4x4 CameraObject::GetViewMatrix() const
