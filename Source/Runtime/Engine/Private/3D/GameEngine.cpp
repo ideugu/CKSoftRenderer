@@ -67,10 +67,12 @@ bool GameEngine::LoadResources()
 	Mesh& cubeMesh = CreateMesh(GameEngine::CubeMesh);
 	auto& v = cubeMesh.GetVertices();
 	auto& i = cubeMesh.GetIndices();
+	v = { Vector3(-1.f, -1.f, 0.f), Vector3(-1.f, 1.f, 0.f), Vector3(1.f, 1.f, 0.f) };
+	i = { 0, 2, 1 };
 
-	static const float halfSize = 0.5f;
-	std::transform(cubeMeshPositions.begin(), cubeMeshPositions.end(), std::back_inserter(v), [&](auto& p) { return p * halfSize; });
-	std::transform(cubeMeshIndice.begin(), cubeMeshIndice.end(), std::back_inserter(i), [&](auto& p) { return p; });
+	//static const float halfSize = 0.5f;
+	//std::transform(cubeMeshPositions.begin(), cubeMeshPositions.end(), std::back_inserter(v), [&](auto& p) { return p * halfSize; });
+	//std::transform(cubeMeshIndice.begin(), cubeMeshIndice.end(), std::back_inserter(i), [&](auto& p) { return p; });
 
 	// 텍스쳐 로딩
 	Texture& diffuseTexture = CreateTexture(GameEngine::DiffuseTexture, GameEngine::SteveTexturePath);
