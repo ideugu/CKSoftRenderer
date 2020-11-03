@@ -5,6 +5,7 @@ using namespace CK::DDD;
 
 // 메시
 const std::size_t GameEngine::CubeMesh = std::hash<std::string>()("SM_Cube");;
+const std::size_t GameEngine::PlaneMesh = std::hash<std::string>()("SM_Plane");;
 
 // 게임 오브젝트
 const std::string GameEngine::PlayerGo("Player");
@@ -91,6 +92,22 @@ bool GameEngine::LoadResources()
 	// 메시의 바운딩 볼륨 생성
 	cubeMesh.CalculateBounds();
 
+	// 평면 메시
+	Mesh& planeMesh = CreateMesh(GameEngine::PlaneMesh);
+	auto& pv = planeMesh.GetVertices();
+	auto& pi = planeMesh.GetIndices();
+	pv = {
+		Vector3(0.f, 0.f, -1.f),
+		Vector3(0.9f, 0.f, 1.f),
+		Vector3(-0.9f, 0.f, 1.f)
+	};
+
+	pi = {
+		0, 2, 1
+	};
+
+	planeMesh.CalculateBounds();
+
 	// 텍스쳐 로딩
 	Texture& diffuseTexture = CreateTexture(GameEngine::DiffuseTexture, GameEngine::SteveTexturePath);
 	assert(diffuseTexture.IsIntialized());
@@ -106,31 +123,22 @@ bool GameEngine::LoadScene()
 	// 플레이어 설정
 	GameObject& goPlayer = CreateNewGameObject(GameEngine::PlayerGo);
 	goPlayer.SetMesh(GameEngine::CubeMesh);
-	goPlayer.GetTransform().SetPosition(Vector3::Zero);
+	goPlayer.GetTransform().SetPosition(Vector3(0.f, 400.f, 0.f));
 	goPlayer.GetTransform().SetScale(Vector3::One * cubeScale);
 	goPlayer.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
 	goPlayer.SetColor(LinearColor::White);
 
-	// 고정 시드로 랜덤하게 생성
-	std::mt19937 generator(0);
-	std::uniform_real_distribution<float> distZ(1000.f, 3000.f);
-	std::uniform_real_distribution<float> distXY(-3000.f, 3000.f);
-
-	// 500개의 배경 게임 오브젝트 생성
-	for (int i = 0; i < 500; ++i)
-	{
-		char name[64];
-		std::snprintf(name, sizeof(name), "GameObject%d", i);
-		GameObject& newGo = CreateNewGameObject(name);
-		newGo.GetTransform().SetPosition(Vector3(distXY(generator), distXY(generator), distZ(generator)));
-		newGo.GetTransform().SetScale(Vector3::One * cubeScale);
-		newGo.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
-		newGo.SetMesh(GameEngine::CubeMesh);
-		newGo.SetColor(LinearColor::White);
-	}
+	// 평면 설정
+	static float planeScale = 800.f;
+	GameObject& goPlane = CreateNewGameObject("Plane");
+	goPlane.SetMesh(GameEngine::PlaneMesh);
+	goPlane.GetTransform().SetScale(Vector3::One * planeScale);
+	goPlane.GetTransform().SetPosition(Vector3(0.f, 0.f, 0.f));
+	goPlane.GetTransform().SetRotation(Rotator(0.f, 0.f, 0.f));
+	goPlane.SetColor(LinearColor::DimGray);
 
 	// 카메라 설정
-	_MainCamera.GetTransform().SetPosition(Vector3(0.f, 0.f, -500.f));
+	_MainCamera.GetTransform().SetPosition(Vector3(0.f, 500.f, -500.f));
 	return true;
 }
 
