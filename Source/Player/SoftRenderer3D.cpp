@@ -32,6 +32,8 @@ void SoftRenderer::DrawGizmo3D()
 
 }
 
+bool useBackfaceCulling = false;
+
 // 게임 로직
 void SoftRenderer::Update3D(float InDeltaSeconds)
 {
@@ -53,6 +55,11 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	// 카메라는 항상 플레이어를 바라보기
 	CameraObject& camera = g.GetMainCamera();
 	camera.SetLookAtRotation(playerTransform.GetPosition());
+
+	if (input.IsReleased(InputButton::Space))
+	{
+		useBackfaceCulling = !useBackfaceCulling;
+	}
 }
 
 // 캐릭터 애니메이션 로직
@@ -139,13 +146,16 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 	auto& r = GetRenderer();
 	const GameEngine& g = Get3DGameEngine();
 
-	// 백페이스 컬링 ( 뒷면이면 그리기 생략 )
-	Vector3 edge1 = (InVertices[1].Position - InVertices[0].Position).ToVector3();
-	Vector3 edge2 = (InVertices[2].Position - InVertices[0].Position).ToVector3();
-	float z = edge1.Cross(edge2).Z;
-	if (z <= 0.f)
+	if (useBackfaceCulling)
 	{
-		return;
+		// 백페이스 컬링 ( 뒷면이면 그리기 생략 )
+		Vector3 edge1 = (InVertices[1].Position - InVertices[0].Position).ToVector3();
+		Vector3 edge2 = (InVertices[2].Position - InVertices[0].Position).ToVector3();
+		float z = edge1.Cross(edge2).Z;
+		if (z <= 0.f)
+		{
+			return;
+		}
 	}
 
 	LinearColor finalColor = _WireframeColor;
