@@ -110,8 +110,15 @@ void SoftRenderer::Render3D()
 		// 최종 변환 행렬
 		Matrix4x4 finalMatrix = pMatrix * vMatrix * transform.GetModelingMatrix();
 		DrawMesh3D(mesh, finalMatrix, gameObject.GetColor());
+
+		if (gameObject == GameEngine::PlayerGo)
+		{
+			// 플레이어의 위치
+			r.PushStatisticText("Player: " + transform.GetPosition().ToString());
+		}
 	}
 	
+	r.PushStatisticText("Camera: " + mainCamera.GetTransform().GetPosition().ToString());
 	r.PushStatisticText("FOV : " + std::to_string(mainCamera.GetFOV()));
 }
 
