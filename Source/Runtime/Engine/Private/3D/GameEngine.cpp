@@ -105,11 +105,12 @@ bool GameEngine::LoadScene()
 	goPlayer.SetMesh(GameEngine::CubeMesh);
 	goPlayer.GetTransform().SetPosition(Vector3::Zero);
 	goPlayer.GetTransform().SetScale(Vector3::One * playerScale);
-	goPlayer.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
+	goPlayer.GetTransform().SetRotation(Rotator(0.f, 0.f, 0.f));
 
 	// 카메라 설정
-	_MainCamera.GetTransform().SetPosition(Vector3(0.f, 600.f, -600.f));
-	_MainCamera.GetTransform().SetRotation(Rotator(0.f, 0.f, 45.f));
+	CameraObject& mainCamera = GetMainCamera();
+	mainCamera.GetTransform().SetPosition(Vector3(0.f, 600.f, 600.f));
+	mainCamera.GetTransform().SetRotation(Rotator(180.f, 0.f, 45.f));
 	return true;
 }
 

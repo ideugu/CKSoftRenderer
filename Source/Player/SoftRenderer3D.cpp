@@ -177,7 +177,7 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 	Vector3 edge1 = (InVertices[1].Position - InVertices[0].Position).ToVector3();
 	Vector3 edge2 = (InVertices[2].Position - InVertices[0].Position).ToVector3();
 	Vector3 faceNormal = edge1.Cross(edge2);
-	Vector3 viewDirection = -Vector3::UnitZ;
+	Vector3 viewDirection = Vector3::UnitZ;
 	if (faceNormal.Dot(viewDirection) <= 0.f)
 	{
 		return;
