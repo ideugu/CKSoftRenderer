@@ -93,7 +93,8 @@ bool GameEngine::LoadScene()
 	goPlayer.SetColor(LinearColor::Blue);
 
 	// 카메라 설정
-	_MainCamera.GetTransform().SetPosition(Vector3(0.f, 0.f, -500.f));
+	auto mainCamera = GetMainCamera();
+	mainCamera.GetTransform().SetPosition(Vector3(0.f, 0.f, -500.f));
 	return true;
 }
 
