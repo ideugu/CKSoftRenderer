@@ -65,6 +65,7 @@ void SoftRenderer::LateUpdate3D(float InDeltaSeconds)
 void SoftRenderer::Render3D()
 {
 	const GameEngine& g = Get3DGameEngine();
+	auto& r = GetRenderer();
 
 	const CameraObject& mainCamera = g.GetMainCamera();
 	const Matrix4x4 vMatrix = mainCamera.GetViewMatrix();
@@ -88,6 +89,13 @@ void SoftRenderer::Render3D()
 		// 최종 변환 행렬
 		Matrix4x4 finalMatrix = vMatrix * transform.GetModelingMatrix();
 		DrawMesh3D(mesh, finalMatrix, gameObject.GetColor());
+
+		// 뷰 공간의 좌표
+		if (gameObject == GameEngine::PlayerGo)
+		{
+			Vector3 viewPosition = vMatrix* transform.GetPosition();
+			r.PushStatisticText("View : " + viewPosition.ToString());
+		}
 	}
 }
 
