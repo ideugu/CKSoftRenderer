@@ -4,7 +4,8 @@
 using namespace CK::DDD;
 
 // 메시
-const std::size_t GameEngine::CubeMesh = std::hash<std::string>()("SM_Cube");;
+const std::size_t GameEngine::CubeMesh = std::hash<std::string>()("SM_Cube");
+const std::size_t GameEngine::ArrowMesh = std::hash<std::string>()("SM_Arrow");
 
 // 게임 오브젝트
 const std::string GameEngine::PlayerGo("Player");
@@ -109,7 +110,9 @@ bool GameEngine::LoadScene()
 	goPlayer.SetColor(LinearColor::Blue);
 
 	// 카메라 설정
-	_MainCamera.GetTransform().SetPosition(Vector3(0.f, 0.f, -500.f));
+	CameraObject& mainCamera = GetMainCamera();
+	mainCamera.GetTransform().SetPosition(Vector3(0.f, 0.f, 500.f));
+	mainCamera.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
 	return true;
 }
 
