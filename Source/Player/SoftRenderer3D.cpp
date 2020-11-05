@@ -4,10 +4,6 @@
 #include <random>
 using namespace CK::DDD;
 
-Vector3 n;
-Vector3 right, forward;
-float thetaDegree = 0.f;
-
 // 그리드 그리기
 void SoftRenderer::DrawGizmo3D()
 {
@@ -33,21 +29,6 @@ void SoftRenderer::DrawGizmo3D()
 	r.DrawLine(v0, v1, LinearColor::Red);
 	r.DrawLine(v0, v2, LinearColor::Green);
 	r.DrawLine(v0, v3, LinearColor::Blue);
-
-	// 회전 축 그리기
-	static float axisLength = 150.f;
-	static float planeLength = 30.f;
-
-	Vector2 axisTo = (viewMatRotationOnly * n).ToVector2() * axisLength;
-	Vector2 axisFrom = -axisTo;
-	Vector2 rightTo = (viewMatRotationOnly * right).ToVector2() * planeLength;
-	Vector2 rightFrom = -rightTo;
-	Vector2 forwardTo = (viewMatRotationOnly * forward).ToVector2() * planeLength;
-	Vector2 forwardFrom = -forwardTo;
-
-	r.DrawLine(axisFrom, axisTo, LinearColor::Red);
-	r.DrawLine(rightFrom, rightTo, LinearColor::DimGray);
-	r.DrawLine(forwardFrom, forwardTo, LinearColor::DimGray);
 }
 
 // 게임 로직
