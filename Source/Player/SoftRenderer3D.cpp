@@ -32,7 +32,7 @@ void SoftRenderer::DrawGizmo3D()
 	r.DrawLine(v0, v3, LinearColor::Blue);
 }
 
-bool useHomogeneousClipping = false;
+bool useHomogeneousClipping = true;
 
 // 게임 로직
 void SoftRenderer::Update3D(float InDeltaSeconds)
@@ -42,20 +42,11 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	const InputManager& input = g.GetInputManager();
 
 	// 기본 설정 변수
-	static float moveSpeed = 500.f;
-	static float rotateSpeed = 180.f;
 	static float fovSpeed = 100.f;
-
-	// 게임 로직에서 사용할 게임 오브젝트 레퍼런스
-	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
-	TransformComponent& playerTransform = goPlayer.GetTransform();
-	Vector3 inputVector = Vector3(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis), input.GetAxis(InputAxis::ZAxis));
-	playerTransform.AddPosition(inputVector * moveSpeed * InDeltaSeconds);
 
 	// 카메라는 항상 플레이어를 바라보기
 	CameraObject& camera = g.GetMainCamera();
-	camera.SetLookAtRotation(playerTransform.GetPosition());
-	float deltaFOV = input.GetAxis(InputAxis::WAxis)* moveSpeed* InDeltaSeconds;
+	float deltaFOV = input.GetAxis(InputAxis::WAxis)* fovSpeed * InDeltaSeconds;
 	camera.SetFOV(Math::Clamp(camera.GetFOV() + deltaFOV, 15.f, 150.f));
 
 	if (input.IsReleased(InputButton::Space))
@@ -225,16 +216,7 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 		v.Position.Z *= invW;
 	}
 
-	// 백페이스 컬링 ( 뒷면이면 그리기 생략 ) - 테스트를 위해 잠시 끄기
-	//Vector3 edge1 = (InVertices[1].Position - InVertices[0].Position).ToVector3();
-	//Vector3 edge2 = (InVertices[2].Position - InVertices[0].Position).ToVector3();
-	//// 왼손 좌표계를 사용하므로 반대 방향으로 설정
-	//Vector3 faceNormal = -edge1.Cross(edge2);
-	//Vector3 viewDirection = Vector3::UnitZ;
-	//if (faceNormal.Dot(viewDirection) >= 0.f)
-	//{
-	//	return;
-	//}
+	// 백페이스 컬링은 생략
 
 	if (IsWireframeDrawing())
 	{

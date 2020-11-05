@@ -97,13 +97,15 @@ bool GameEngine::LoadResources()
 	auto& pv = planeMesh.GetVertices();
 	auto& pi = planeMesh.GetIndices();
 	pv = {
-		Vector3(0.f, 0.f, 1.f),
-		Vector3(0.9f, 0.f, -1.f),
-		Vector3(-0.9f, 0.f, -1.f)
+		Vector3(-1.f, 0.f, 1.f),
+		Vector3(-1.f, 0.f, -1.f),
+		Vector3(1.f, 0.f, -1.f),
+		Vector3(1.f, 0.f, 1.f),
 	};
 
 	pi = {
-		0, 1, 2
+		0, 2, 1,
+		0, 3, 2
 	};
 
 	planeMesh.CalculateBounds();
@@ -117,18 +119,8 @@ bool GameEngine::LoadResources()
 
 bool GameEngine::LoadScene()
 {
-	// 플레이어
-	constexpr float cubeScale = 100.f;
-
-	// 플레이어 설정
-	GameObject& goPlayer = CreateNewGameObject(GameEngine::PlayerGo);
-	goPlayer.SetMesh(GameEngine::CubeMesh);
-	goPlayer.GetTransform().SetPosition(Vector3(0.f, 400.f, 0.f));
-	goPlayer.GetTransform().SetScale(Vector3::One * cubeScale);
-	goPlayer.SetColor(LinearColor::White);
-
 	// 평면 설정
-	static float planeScale = 800.f;
+	static float planeScale = 1000.f;
 	GameObject& goPlane = CreateNewGameObject("Plane");
 	goPlane.SetMesh(GameEngine::PlaneMesh);
 	goPlane.GetTransform().SetScale(Vector3::One * planeScale);
@@ -138,7 +130,7 @@ bool GameEngine::LoadScene()
 	// 카메라 설정
 	CameraObject& mainCamera = GetMainCamera();
 	mainCamera.GetTransform().SetPosition(Vector3(0.f, 400.f, 400.f));
-	mainCamera.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
+	mainCamera.GetTransform().SetRotation(Rotator(180.f, 0.f, 20.f));
 	return true;
 }
 
