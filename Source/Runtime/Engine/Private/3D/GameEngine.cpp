@@ -4,7 +4,7 @@
 using namespace CK::DDD;
 
 // 메시
-const std::size_t GameEngine::CubeMesh = std::hash<std::string>()("SM_Cube");;
+const std::size_t GameEngine::CubeMesh = std::hash<std::string>()("SM_Cube");
 const std::size_t GameEngine::PlaneMesh = std::hash<std::string>()("SM_Plane");;
 
 // 게임 오브젝트
@@ -97,13 +97,13 @@ bool GameEngine::LoadResources()
 	auto& pv = planeMesh.GetVertices();
 	auto& pi = planeMesh.GetIndices();
 	pv = {
-		Vector3(0.f, 0.f, -1.f),
-		Vector3(0.9f, 0.f, 1.f),
-		Vector3(-0.9f, 0.f, 1.f)
+		Vector3(0.f, 0.f, 1.f),
+		Vector3(0.9f, 0.f, -1.f),
+		Vector3(-0.9f, 0.f, -1.f)
 	};
 
 	pi = {
-		0, 2, 1
+		0, 1, 2
 	};
 
 	planeMesh.CalculateBounds();
@@ -125,7 +125,6 @@ bool GameEngine::LoadScene()
 	goPlayer.SetMesh(GameEngine::CubeMesh);
 	goPlayer.GetTransform().SetPosition(Vector3(0.f, 400.f, 0.f));
 	goPlayer.GetTransform().SetScale(Vector3::One * cubeScale);
-	goPlayer.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
 	goPlayer.SetColor(LinearColor::White);
 
 	// 평면 설정
@@ -134,11 +133,12 @@ bool GameEngine::LoadScene()
 	goPlane.SetMesh(GameEngine::PlaneMesh);
 	goPlane.GetTransform().SetScale(Vector3::One * planeScale);
 	goPlane.GetTransform().SetPosition(Vector3(0.f, 0.f, 0.f));
-	goPlane.GetTransform().SetRotation(Rotator(0.f, 0.f, 0.f));
 	goPlane.SetColor(LinearColor::DimGray);
 
 	// 카메라 설정
-	_MainCamera.GetTransform().SetPosition(Vector3(0.f, 500.f, -500.f));
+	CameraObject& mainCamera = GetMainCamera();
+	mainCamera.GetTransform().SetPosition(Vector3(0.f, 400.f, 400.f));
+	mainCamera.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
 	return true;
 }
 
