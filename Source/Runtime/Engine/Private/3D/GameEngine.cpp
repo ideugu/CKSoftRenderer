@@ -4,7 +4,7 @@
 using namespace CK::DDD;
 
 // 메시
-const std::size_t GameEngine::CubeMesh = std::hash<std::string>()("SM_Cube");;
+const std::size_t GameEngine::CubeMesh = std::hash<std::string>()("SM_Cube");
 
 // 게임 오브젝트
 const std::string GameEngine::PlayerGo("Player");
@@ -108,12 +108,11 @@ bool GameEngine::LoadScene()
 	goPlayer.SetMesh(GameEngine::CubeMesh);
 	goPlayer.GetTransform().SetPosition(Vector3::Zero);
 	goPlayer.GetTransform().SetScale(Vector3::One * cubeScale);
-	goPlayer.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
 	goPlayer.SetColor(LinearColor::White);
 
 	// 고정 시드로 랜덤하게 생성
 	std::mt19937 generator(0);
-	std::uniform_real_distribution<float> distZ(1000.f, 3000.f);
+	std::uniform_real_distribution<float> distZ(-3000.f, -1000.f);
 	std::uniform_real_distribution<float> distXY(-3000.f, 3000.f);
 
 	// 500개의 배경 게임 오브젝트 생성
@@ -124,13 +123,14 @@ bool GameEngine::LoadScene()
 		GameObject& newGo = CreateNewGameObject(name);
 		newGo.GetTransform().SetPosition(Vector3(distXY(generator), distXY(generator), distZ(generator)));
 		newGo.GetTransform().SetScale(Vector3::One * cubeScale);
-		newGo.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
 		newGo.SetMesh(GameEngine::CubeMesh);
 		newGo.SetColor(LinearColor::White);
 	}
 
 	// 카메라 설정
-	_MainCamera.GetTransform().SetPosition(Vector3(0.f, 0.f, -500.f));
+	CameraObject& mainCamera = GetMainCamera();
+	mainCamera.GetTransform().SetPosition(Vector3(0.f, 0.f, 400.f));
+	mainCamera.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
 	return true;
 }
 
