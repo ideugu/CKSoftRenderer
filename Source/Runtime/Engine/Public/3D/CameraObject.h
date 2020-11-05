@@ -39,7 +39,7 @@ public:
 private:
 	TransformComponent _Transform;
 
-	float _FOV = 60.f;
+	float _FOV = 45.f;
 	float _NearZ = 5.5f;
 	float _FarZ = 5000.f;
 	ScreenPoint _ViewportSize;
@@ -51,9 +51,6 @@ FORCEINLINE void CameraObject::GetViewAxes(Vector3& OutViewX, Vector3& OutViewY,
 	OutViewZ = -_Transform.GetLocalZ();
 	OutViewY = _Transform.GetLocalY();
 	OutViewX = -_Transform.GetLocalX();
-
-	// ¿Þ¼Õ ÁÂÇ¥°è¸¦ ¿À¸¥¼Õ ÁÂÇ¥°è·Î º¯È¯
-	OutViewX = -OutViewX;
 }
 
 FORCEINLINE Matrix4x4 CameraObject::GetViewMatrix() const
