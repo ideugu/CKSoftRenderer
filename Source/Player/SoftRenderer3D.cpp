@@ -4,6 +4,10 @@
 #include <random>
 using namespace CK::DDD;
 
+Vector3 n;
+Vector3 right, forward;
+float thetaDegree = 0.f;
+
 // 그리드 그리기
 void SoftRenderer::DrawGizmo3D()
 {
@@ -31,6 +35,20 @@ void SoftRenderer::DrawGizmo3D()
 	r.DrawLine(v0, v2, LinearColor::Green);
 	r.DrawLine(v0, v3, LinearColor::Blue);
 
+	// 회전 축 그리기
+	static float axisLength = 150.f;
+	static float planeLength = 30.f;
+
+	Vector2 axisTo = (viewMatRotationOnly * n).ToVector2() * axisLength;
+	Vector2 axisFrom = -axisTo;
+	Vector2 rightTo = (viewMatRotationOnly * right).ToVector2() * planeLength;
+	Vector2 rightFrom = -rightTo;
+	Vector2 forwardTo = (viewMatRotationOnly * forward).ToVector2() * planeLength;
+	Vector2 forwardFrom = -forwardTo;
+
+	r.DrawLine(axisFrom, axisTo, LinearColor::Red);
+	r.DrawLine(rightFrom, rightTo, LinearColor::DimGray);
+	r.DrawLine(forwardFrom, forwardTo, LinearColor::DimGray);
 }
 
 bool toggleDepthTesting = true;
@@ -180,9 +198,10 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 	// 백페이스 컬링 ( 뒷면이면 그리기 생략 )
 	Vector3 edge1 = (InVertices[1].Position - InVertices[0].Position).ToVector3();
 	Vector3 edge2 = (InVertices[2].Position - InVertices[0].Position).ToVector3();
-	Vector3 faceNormal = edge1.Cross(edge2);
-	Vector3 viewDirection = -Vector3::UnitZ;
-	if (faceNormal.Dot(viewDirection) <= 0.f)
+	// 왼손 좌표계를 사용하므로 반대 방향으로 설정
+	Vector3 faceNormal = -edge1.Cross(edge2);
+	Vector3 viewDirection = Vector3::UnitZ;
+	if (faceNormal.Dot(viewDirection) >= 0.f)
 	{
 		return;
 	}
