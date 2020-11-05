@@ -30,7 +30,6 @@ void SoftRenderer::DrawGizmo3D()
 	r.DrawLine(v0, v1, LinearColor::Red);
 	r.DrawLine(v0, v2, LinearColor::Green);
 	r.DrawLine(v0, v3, LinearColor::Blue);
-
 }
 
 bool useLinearVisualization = false;
@@ -210,9 +209,10 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 	// 백페이스 컬링 ( 뒷면이면 그리기 생략 )
 	Vector3 edge1 = (InVertices[1].Position - InVertices[0].Position).ToVector3();
 	Vector3 edge2 = (InVertices[2].Position - InVertices[0].Position).ToVector3();
-	Vector3 faceNormal = edge1.Cross(edge2);
-	Vector3 viewDirection = -Vector3::UnitZ;
-	if (faceNormal.Dot(viewDirection) <= 0.f)
+	// 왼손 좌표계를 사용하므로 반대 방향으로 설정
+	Vector3 faceNormal = -edge1.Cross(edge2);
+	Vector3 viewDirection = Vector3::UnitZ;
+	if (faceNormal.Dot(viewDirection) >= 0.f)
 	{
 		return;
 	}
