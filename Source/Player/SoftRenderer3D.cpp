@@ -32,7 +32,7 @@ void SoftRenderer::DrawGizmo3D()
 	r.DrawLine(v0, v3, LinearColor::Blue);
 }
 
-bool useLinearVisualization = false;
+bool useHomogeneousClipping = true;
 
 // 게임 로직
 void SoftRenderer::Update3D(float InDeltaSeconds)
@@ -60,7 +60,7 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 
 	if (input.IsReleased(InputButton::Space))
 	{
-		useLinearVisualization = !useLinearVisualization;
+		useHomogeneousClipping = !useHomogeneousClipping;
 	}
 }
 
@@ -180,6 +180,26 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 		int bi0 = ti * 3, bi1 = ti * 3 + 1, bi2 = ti * 3 + 2;
 		std::vector<Vertex3D> tvs = { vertices[indice[bi0]] , vertices[indice[bi1]] , vertices[indice[bi2]] };
 
+		if (useHomogeneousClipping)
+		{
+			// 동차좌표계에서 클리핑을 위한 설정
+			std::vector<PerspectiveTest> testPlanes = {
+				{ TestFuncW0, EdgeFuncW0 },
+				{ TestFuncNY, EdgeFuncNY },
+				{ TestFuncPY, EdgeFuncPY },
+				{ TestFuncNX, EdgeFuncNX },
+				{ TestFuncPX, EdgeFuncPX },
+				{ TestFuncFar, EdgeFuncFar },
+				{ TestFuncNear, EdgeFuncNear }
+			};
+
+			// 동차좌표계에서 클리핑 진행
+			for (auto& p : testPlanes)
+			{
+				p.ClipTriangles(tvs);
+			}
+		}
+
 		size_t triangles = tvs.size() / 3;
 		for (size_t ti = 0; ti < triangles; ++ti)
 		{
@@ -226,7 +246,7 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 		}
 
 		LinearColor finalColor = _WireframeColor;
-		if (InColor != LinearColor::Error)
+		if (InColor != LinearColor::White)
 		{
 			finalColor = InColor;
 		}
@@ -320,15 +340,11 @@ void SoftRenderer::DrawTriangle3D(std::vector<Vertex3D>& InVertices, const Linea
 
 					if (IsDepthBufferDrawing())
 					{
-						float grayScale = (newDepth + 1.f) * 0.5f;
-						if (useLinearVisualization)
-						{
-							float n = g.GetMainCamera().GetNearZ();
-							float f = g.GetMainCamera().GetFarZ();
+						float n = g.GetMainCamera().GetNearZ();
+						float f = g.GetMainCamera().GetFarZ();
 
-							// 시각화를 위해 선형화된 흑백 값으로 변환
-							grayScale = (invZ - n) / (f - n);
-						}
+						// 시각화를 위해 선형화된 흑백 값으로 변환
+						float grayScale = (invZ - n) / (f - n);
 
 						// 뎁스 버퍼 그리기
 						r.DrawPoint(fragment, LinearColor::White * grayScale);
