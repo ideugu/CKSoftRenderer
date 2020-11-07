@@ -29,7 +29,7 @@ public:
 	FORCEINLINE constexpr Vector2 ToVector2() const;
 	FORCEINLINE float Size() const;
 	FORCEINLINE constexpr float SizeSquared() const;
-	FORCEINLINE Vector3 Normalize() const;
+	FORCEINLINE [[nodiscard]] Vector3 Normalize() const;
 	FORCEINLINE constexpr bool EqualsInTolerance(const Vector3& InVector, float InTolerance = SMALL_NUMBER) const;
 	FORCEINLINE constexpr float Max() const;
 	FORCEINLINE constexpr float Dot(const Vector3& InVector) const;
