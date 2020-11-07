@@ -32,7 +32,9 @@ void SoftRenderer::DrawGizmo3D()
 	r.DrawLine(v0, v3, LinearColor::Blue);
 }
 
-static Vector3 randomAxis(0.f, 1.f, 0.f);
+// 선형 보간에 사용하는 사원수 변수
+static Quaternion startRotation(Rotator(180.f, 0.f, 0.f));
+static Quaternion endRotation;
 
 // 게임 로직
 void SoftRenderer::Update3D(float InDeltaSeconds)
@@ -63,24 +65,20 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	float deltaFOV = input.GetAxis(InputAxis::WAxis)* moveSpeed* InDeltaSeconds;
 	camera.SetFOV(Math::Clamp(camera.GetFOV() + deltaFOV, 15.f, 150.f));
 
-	// 선형 보간을 위한 사원수 변수
-	static Quaternion startRotation(camera.GetTransform().GetRotation());
-	static Quaternion targetRotation(Rotator(0.f, 0.f, 0.f));
-
 	elapsedTime = Math::Clamp(elapsedTime + InDeltaSeconds, 0.f, duration);
 	if (elapsedTime == duration)
 	{
 		elapsedTime = 0.f;
-		startRotation = targetRotation;
+		startRotation = endRotation;
 	
-		randomAxis = Vector3(dir(generator), dir(generator), dir(generator)).Normalize();
-		targetRotation = Quaternion(randomAxis, angle(generator));
+		Vector3 randomAxis = Vector3(dir(generator), dir(generator), dir(generator)).Normalize();
+		endRotation = Quaternion(randomAxis, angle(generator));
 		camera.GetTransform().SetRotation(startRotation);
 	}
 	else
 	{
 		float t = elapsedTime / duration;
-		Quaternion current = Quaternion::Slerp(startRotation, targetRotation, t);
+		Quaternion current = Quaternion::Slerp(startRotation, endRotation, t);
 		camera.GetTransform().SetRotation(current);
 	}
 }
@@ -162,10 +160,9 @@ void SoftRenderer::Render3D()
 		renderedObjects++;
 	}
 	
-	r.PushStatisticText("Total GameObjects : " + std::to_string(totalObjects));
-	r.PushStatisticText("Culled GameObjects : " + std::to_string(culledObjects));
-	r.PushStatisticText("Intersected GameObjects : " + std::to_string(intersectedObjects));
-	r.PushStatisticText("Rendered GameObjects : " + std::to_string(renderedObjects));
+	r.PushStatisticText("Start : " + startRotation.ToString());
+	r.PushStatisticText("End : " + endRotation.ToString());
+	r.PushStatisticText("Current : " + mainCamera.GetTransform().GetRotation().ToString());
 }
 
 void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, const LinearColor& InColor)

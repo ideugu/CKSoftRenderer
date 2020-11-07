@@ -32,7 +32,7 @@ public:
 	FORCEINLINE constexpr Vector3 ToVector3() const;
 	FORCEINLINE float Size() const;
 	FORCEINLINE constexpr float SizeSquared() const;
-	FORCEINLINE Vector4 Normalize() const;
+	[[nodiscard]] Vector4 Normalize() const;
 	FORCEINLINE constexpr bool EqualsInTolerance(const Vector4& InVector, float InTolerance = SMALL_NUMBER) const;
 	FORCEINLINE constexpr float Max() const;
 	FORCEINLINE constexpr float Dot(const Vector4& InVector) const;
@@ -78,22 +78,6 @@ FORCEINLINE float Vector4::Size() const
 FORCEINLINE constexpr float Vector4::SizeSquared() const
 {
 	return X * X + Y * Y + Z * Z + W * W;
-}
-
-FORCEINLINE Vector4 Vector4::Normalize() const
-{
-	float squareSum = SizeSquared();
-	if (squareSum == 1.f)
-	{
-		return *this;
-	}
-	else if (squareSum == 0.f)
-	{
-		return Vector4::Zero;
-	}
-
-	float invLength = Math::InvSqrt(squareSum);
-	return Vector4(X * invLength, Y * invLength, Z * invLength, W * invLength);
 }
 
 FORCEINLINE constexpr float Vector4::operator[](BYTE InIndex) const

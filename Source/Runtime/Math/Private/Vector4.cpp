@@ -15,3 +15,19 @@ std::string Vector4::ToString() const
 	std::snprintf(result, sizeof(result), "(%.3f, %.3f, %.3f, %.3f)", X, Y, Z, W);
 	return result;
 }
+
+Vector4 Vector4::Normalize() const
+{
+	float squareSum = SizeSquared();
+	if (squareSum == 1.f)
+	{
+		return *this;
+	}
+	else if (squareSum == 0.f)
+	{
+		return Vector4::Zero;
+	}
+
+	float invLength = Math::InvSqrt(squareSum);
+	return Vector4(X * invLength, Y * invLength, Z * invLength, W * invLength);
+}
