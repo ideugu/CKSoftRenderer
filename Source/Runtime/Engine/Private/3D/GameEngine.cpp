@@ -4,7 +4,7 @@
 using namespace CK::DDD;
 
 // 메시
-const std::size_t GameEngine::CubeMesh = std::hash<std::string>()("SM_Cube");
+const std::size_t GameEngine::QuadMesh = std::hash<std::string>()("SM_Quad");
 
 // 게임 오브젝트
 const std::string GameEngine::PlayerGo("Player");
@@ -63,33 +63,47 @@ bool GameEngine::Init()
 
 bool GameEngine::LoadResources()
 {
-	// 큐브 메시
-	Mesh& cubeMesh = CreateMesh(GameEngine::CubeMesh);
-	auto& v = cubeMesh.GetVertices();
-	auto& i = cubeMesh.GetIndices();
+	// 사각 메시
+	static float halfSize = 0.5f;
+	Mesh& quadMesh = CreateMesh(GameEngine::QuadMesh);
+	auto& v = quadMesh.GetVertices();
+	auto& i = quadMesh.GetIndices();
+	auto& uv = quadMesh.GetUVs();
 
-	static const float halfSize = 0.5f;
-	std::transform(cubeMeshPositions.begin(), cubeMeshPositions.end(), std::back_inserter(v), [&](auto& p) { return p * halfSize; });
-	std::transform(cubeMeshIndice.begin(), cubeMeshIndice.end(), std::back_inserter(i), [&](auto& p) { return p; });
+	v = {
+		Vector3(-1.f, -1.f, 1.f) * halfSize, Vector3(-1.f, 1.f, 1.f) * halfSize, Vector3(1.f, 1.f, 1.f) * halfSize, Vector3(1.f, -1.f, 1.f) * halfSize
+	};
 
-	auto& uv = cubeMesh.GetUVs();
+	i = {
+		0, 2, 1, 0, 3, 2
+	};
+
 	uv = {
-		// Right
-		Vector2(0.f, 48.f) / 64.f, Vector2(8.f, 48.f) / 64.f, Vector2(8.f, 56.f) / 64.f, Vector2(0.f, 56.f) / 64.f,
-		// Front
-		Vector2(8.f, 48.f) / 64.f, Vector2(8.f, 56.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(16.f, 48.f) / 64.f,
-		// Back
-		Vector2(32.f, 48.f) / 64.f, Vector2(32.f, 56.f) / 64.f, Vector2(24.f, 56.f) / 64.f, Vector2(24.f, 48.f) / 64.f,
-		// Left
-		Vector2(24.f, 48.f) / 64.f, Vector2(16.f, 48.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(24.f, 56.f) / 64.f,
-		// Top
-		Vector2(8.f, 64.f) / 64.f, Vector2(16.f, 64.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(8.f, 56.f) / 64.f,
-		// Bottom
-		Vector2(16.f, 64.f) / 64.f, Vector2(24.f, 64.f) / 64.f, Vector2(24.f, 56.f) / 64.f, Vector2(16.f, 56.f) / 64.f
+		Vector2(8.f, 48.f) / 64.f, Vector2(8.f, 56.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(16.f, 48.f) / 64.f
+	};
+
+	// 스킨드 메시 설정
+	quadMesh.SetMeshType(MeshType::Skinned);
+
+	// 리깅 수행
+	auto& bones = quadMesh.GetBones();
+	auto& connectedBones = quadMesh.GetConnectedBones();
+	auto& weights = quadMesh.GetWeights();
+
+	bones = {
+		{"left", Bone("left", Transform(Vector3(-1.f, 0.f, 1.f) * halfSize))},
+		{"right", Bone("right", Transform(Vector3(1.f, 0.f, 1.f) * halfSize))}
+	};
+	connectedBones = { 1, 1, 1, 1 };
+	weights = {
+		{ {"left"}, {1.f} },
+		{ {"left"}, {1.f} },
+		{ {"right"}, {1.f} },
+		{ {"right"}, {1.f} }
 	};
 
 	// 메시의 바운딩 볼륨 생성
-	cubeMesh.CalculateBounds();
+	quadMesh.CalculateBounds();
 
 	// 텍스쳐 로딩
 	Texture& diffuseTexture = CreateTexture(GameEngine::DiffuseTexture, GameEngine::SteveTexturePath);
@@ -105,27 +119,10 @@ bool GameEngine::LoadScene()
 
 	// 플레이어 설정
 	GameObject& goPlayer = CreateNewGameObject(GameEngine::PlayerGo);
-	goPlayer.SetMesh(GameEngine::CubeMesh);
+	goPlayer.SetMesh(GameEngine::QuadMesh);
 	goPlayer.GetTransform().SetPosition(Vector3::Zero);
 	goPlayer.GetTransform().SetScale(Vector3::One * cubeScale);
 	goPlayer.SetColor(LinearColor::White);
-
-	// 고정 시드로 랜덤하게 생성
-	std::mt19937 generator(0);
-	std::uniform_real_distribution<float> distZ(-3000.f, 3000.f);
-	std::uniform_real_distribution<float> distXY(-3000.f, 3000.f);
-
-	// 500개의 배경 게임 오브젝트 생성
-	for (int i = 0; i < 500; ++i)
-	{
-		char name[64];
-		std::snprintf(name, sizeof(name), "GameObject%d", i);
-		GameObject& newGo = CreateNewGameObject(name);
-		newGo.GetTransform().SetPosition(Vector3(distXY(generator), distXY(generator), distZ(generator)));
-		newGo.GetTransform().SetScale(Vector3::One * cubeScale);
-		newGo.SetMesh(GameEngine::CubeMesh);
-		newGo.SetColor(LinearColor::White);
-	}
 
 	// 카메라 설정
 	CameraObject& mainCamera = GetMainCamera();

@@ -32,9 +32,8 @@ void SoftRenderer::DrawGizmo3D()
 	r.DrawLine(v0, v3, LinearColor::Blue);
 }
 
-// 선형 보간에 사용하는 사원수 변수
-static Quaternion startRotation(Rotator(180.f, 0.f, 0.f));
-static Quaternion endRotation;
+Vector3 leftBonePosition;
+Vector3 rightBonePosition;
 
 // 게임 로직
 void SoftRenderer::Update3D(float InDeltaSeconds)
@@ -45,42 +44,47 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 
 	// 기본 설정 변수
 	static float duration = 3.f;
-	static float moveSpeed = 300.f;
 	static float fovSpeed = 100.f;
 	static float elapsedTime = 0.f;
 
-	// 랜덤 발생기
-	static std::mt19937 generator(0);
-	static std::uniform_real_distribution<float> dir(-1.f, 1.f);
-	static std::uniform_real_distribution<float> angle(0.f, 180.f);
-
-	// 플레이어의 이동
-	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
-	TransformComponent& playerTransform = goPlayer.GetTransform();
-	Vector3 inputVector = Vector3(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis), input.GetAxis(InputAxis::ZAxis));
-	playerTransform.AddPosition(inputVector * moveSpeed * InDeltaSeconds);
-
-	// 카메라 시야각 조절
-	CameraObject& camera = g.GetMainCamera();
-	float deltaFOV = input.GetAxis(InputAxis::WAxis)* moveSpeed* InDeltaSeconds;
-	camera.SetFOV(Math::Clamp(camera.GetFOV() + deltaFOV, 15.f, 150.f));
-
+	// 애니메이션을 위한 커브 생성 ( 0~1 SineWave )
 	elapsedTime = Math::Clamp(elapsedTime + InDeltaSeconds, 0.f, duration);
 	if (elapsedTime == duration)
 	{
 		elapsedTime = 0.f;
-		startRotation = endRotation;
-	
-		Vector3 randomAxis = Vector3(dir(generator), dir(generator), dir(generator)).Normalize();
-		endRotation = Quaternion(randomAxis, angle(generator));
-		camera.GetTransform().SetRotation(startRotation);
 	}
-	else
+	float sinParam = elapsedTime * Math::TwoPI / duration;
+	float sinWave = (sinf(sinParam) + 1.f) * 0.5f;
+
+	// 플레이어의 이동
+	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
+	Mesh& m = g.GetMesh(goPlayer.GetMeshKey());
+	if (m.IsSkinnedMesh())
 	{
-		float t = elapsedTime / duration;
-		Quaternion current = Quaternion::Slerp(startRotation, endRotation, t);
-		camera.GetTransform().SetRotation(current);
+		const std::string leftBone("left");
+		const std::string rightBone("right");
+
+		if (m.HasBone(leftBone))
+		{
+			Transform& boneTransform = m.GetBone(leftBone).GetTransform();
+			boneTransform.SetPosition(Vector3::UnitX * -sinWave);
+			const Transform& bindPoseTransform = m.GetBindPose(leftBone);
+			leftBonePosition = bindPoseTransform.GetPosition() + boneTransform.GetPosition();
+		}
+
+		if (m.HasBone(rightBone))
+		{
+			Transform& boneTransform = m.GetBone(rightBone).GetTransform();
+			boneTransform.SetPosition(Vector3::UnitX * sinWave);
+			const Transform& bindPoseTransform = m.GetBindPose(rightBone);
+			rightBonePosition = bindPoseTransform.GetPosition() + boneTransform.GetPosition();
+		}
 	}
+
+	// 카메라 시야각 조절
+	CameraObject& camera = g.GetMainCamera();
+	float deltaFOV = input.GetAxis(InputAxis::WAxis) * fovSpeed * InDeltaSeconds;
+	camera.SetFOV(Math::Clamp(camera.GetFOV() + deltaFOV, 15.f, 150.f));
 }
 
 // 캐릭터 애니메이션 로직
@@ -160,9 +164,8 @@ void SoftRenderer::Render3D()
 		renderedObjects++;
 	}
 	
-	r.PushStatisticText("Start : " + startRotation.ToString());
-	r.PushStatisticText("End : " + endRotation.ToString());
-	r.PushStatisticText("Current : " + mainCamera.GetTransform().GetRotation().ToString());
+	r.PushStatisticText("Left Bone : " + leftBonePosition.ToString());
+	r.PushStatisticText("Right Bone : " + rightBonePosition.ToString());
 }
 
 void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, const LinearColor& InColor)
@@ -177,6 +180,24 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 	for (size_t vi = 0; vi < vertexCount; ++vi)
 	{
 		vertices[vi].Position = Vector4(InMesh.GetVertices()[vi]);
+
+		// 위치에 대해 스키닝 연산 수행
+		if (InMesh.IsSkinnedMesh())
+		{
+			Vector3 deltaPosition;
+			Weight w = InMesh.GetWeights()[vi];
+			for (size_t wi = 0; wi < InMesh.GetConnectedBones()[vi]; ++wi)
+			{
+				std::string boneName = w.Bones[wi];
+				if (InMesh.HasBone(boneName))
+				{
+					const Transform& boneTransform = InMesh.GetBone(boneName).GetTransform();
+					deltaPosition += boneTransform.GetPosition() * w.Values[wi];
+				}
+			}
+
+			vertices[vi].Position += Vector4(deltaPosition, false);
+		}
 
 		if (InMesh.HasColor())
 		{

@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(CMakeDependentOption)
-set(MAIN_PROJECT_NAME SoftRenderer14-1)
+set(MAIN_PROJECT_NAME SoftRenderer15-1)
 
 project(${MAIN_PROJECT_NAME})
 
