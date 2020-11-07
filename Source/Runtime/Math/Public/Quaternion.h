@@ -80,6 +80,7 @@ FORCEINLINE void Quaternion::FromMatrix(const Matrix3x3& InMatrix)
 
 	if (trace > 0.f)
 	{
+		// W 요소를 구하고 나머지 X,Y,Z를 계산
 		root = sqrtf(trace + 1.f);
 		W = 0.5f * root;
 		root = 0.5f / root;
@@ -92,22 +93,28 @@ FORCEINLINE void Quaternion::FromMatrix(const Matrix3x3& InMatrix)
 	{
 		BYTE i = 0;
 
+		// X,Y,Z 중에서 가장 큰 요소를 파악
 		if (InMatrix[1][1] > InMatrix[0][0]) { i = 1; }
 		if (InMatrix[2][2] > InMatrix[i][i]) { i = 2; }
 
 		// i, j, k 의 순서 지정
 		static const BYTE next[3] = { 1, 2, 0 };
-		const BYTE j = next[i];
-		const BYTE k = next[j];
+		BYTE j = next[i];
+		BYTE k = next[j];
 
+		// 가장 큰 요소의 값을 구하기
 		root = sqrtf(InMatrix[i][i] - InMatrix[j][j] - InMatrix[k][k] + 1.f);
 
 		float* qt[3] = { &X, &Y, &Z };
 		*qt[i] = 0.5f * root;
 
 		root = 0.5f / root;
+
+		// 나머지 두 요소의 값을 구하기
 		*qt[j] = (InMatrix[i][j] + InMatrix[j][i]) * root;
 		*qt[k] = (InMatrix[i][k] + InMatrix[k][i]) * root;
+
+		// 마지막 W 값 구하기
 		W = (InMatrix[j][k] - InMatrix[k][j]) * root;
 	}
 }
