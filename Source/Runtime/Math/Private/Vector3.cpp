@@ -14,3 +14,19 @@ std::string Vector3::ToString() const
 	std::snprintf(result, sizeof(result), "(%.3f, %.3f, %.3f)", X, Y, Z);
 	return result;
 }
+
+Vector3 Vector3::Normalize() const
+{
+	float squareSum = SizeSquared();
+	if (squareSum == 1.f)
+	{
+		return *this;
+	}
+	else if (squareSum == 0.f)
+	{
+		return Vector3::Zero;
+	}
+
+	float invLength = Math::InvSqrt(squareSum);
+	return Vector3(X * invLength, Y * invLength, Z * invLength);
+}
