@@ -112,7 +112,7 @@ bool GameEngine::LoadScene()
 
 	// 고정 시드로 랜덤하게 생성
 	std::mt19937 generator(0);
-	std::uniform_real_distribution<float> distZ(-3000.f, -1000.f);
+	std::uniform_real_distribution<float> distZ(-3000.f, 3000.f);
 	std::uniform_real_distribution<float> distXY(-3000.f, 3000.f);
 
 	// 500개의 배경 게임 오브젝트 생성

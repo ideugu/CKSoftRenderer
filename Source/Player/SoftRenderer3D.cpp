@@ -32,7 +32,7 @@ void SoftRenderer::DrawGizmo3D()
 	r.DrawLine(v0, v3, LinearColor::Blue);
 }
 
-bool useHomogeneousClipping = true;
+static Vector3 randomAxis(0.f, 1.f, 0.f);
 
 // 게임 로직
 void SoftRenderer::Update3D(float InDeltaSeconds)
@@ -42,25 +42,46 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	const InputManager& input = g.GetInputManager();
 
 	// 기본 설정 변수
-	static float moveSpeed = 500.f;
-	static float rotateSpeed = 180.f;
+	static float duration = 3.f;
+	static float moveSpeed = 300.f;
 	static float fovSpeed = 100.f;
+	static float elapsedTime = 0.f;
 
-	// 게임 로직에서 사용할 게임 오브젝트 레퍼런스
+	// 랜덤 발생기
+	static std::mt19937 generator(0);
+	static std::uniform_real_distribution<float> dir(-1.f, 1.f);
+	static std::uniform_real_distribution<float> angle(0.f, 180.f);
+
+	// 플레이어의 이동
 	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
 	TransformComponent& playerTransform = goPlayer.GetTransform();
 	Vector3 inputVector = Vector3(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis), input.GetAxis(InputAxis::ZAxis));
 	playerTransform.AddPosition(inputVector * moveSpeed * InDeltaSeconds);
 
-	// 카메라는 항상 플레이어를 바라보기
+	// 카메라 시야각 조절
 	CameraObject& camera = g.GetMainCamera();
-	camera.SetLookAtRotation(playerTransform.GetPosition());
 	float deltaFOV = input.GetAxis(InputAxis::WAxis)* moveSpeed* InDeltaSeconds;
 	camera.SetFOV(Math::Clamp(camera.GetFOV() + deltaFOV, 15.f, 150.f));
 
-	if (input.IsReleased(InputButton::Space))
+	// 선형 보간을 위한 사원수 변수
+	static Quaternion startRotation(camera.GetTransform().GetRotation());
+	static Quaternion targetRotation(Rotator(0.f, 0.f, 0.f));
+
+	elapsedTime = Math::Clamp(elapsedTime + InDeltaSeconds, 0.f, duration);
+	if (elapsedTime == duration)
 	{
-		useHomogeneousClipping = !useHomogeneousClipping;
+		elapsedTime = 0.f;
+		startRotation = targetRotation;
+	
+		randomAxis = Vector3(dir(generator), dir(generator), dir(generator)).Normalize();
+		targetRotation = Quaternion(randomAxis, angle(generator));
+		camera.GetTransform().SetRotation(startRotation);
+	}
+	else
+	{
+		float t = elapsedTime / duration;
+		Quaternion current = Quaternion::Slerp(startRotation, targetRotation, t);
+		camera.GetTransform().SetRotation(current);
 	}
 }
 
@@ -180,24 +201,21 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 		int bi0 = ti * 3, bi1 = ti * 3 + 1, bi2 = ti * 3 + 2;
 		std::vector<Vertex3D> tvs = { vertices[indice[bi0]] , vertices[indice[bi1]] , vertices[indice[bi2]] };
 
-		if (useHomogeneousClipping)
-		{
-			// 동차좌표계에서 클리핑을 위한 설정
-			std::vector<PerspectiveTest> testPlanes = {
-				{ TestFuncW0, EdgeFuncW0 },
-				{ TestFuncNY, EdgeFuncNY },
-				{ TestFuncPY, EdgeFuncPY },
-				{ TestFuncNX, EdgeFuncNX },
-				{ TestFuncPX, EdgeFuncPX },
-				{ TestFuncFar, EdgeFuncFar },
-				{ TestFuncNear, EdgeFuncNear }
-			};
+		// 동차좌표계에서 클리핑을 위한 설정
+		std::vector<PerspectiveTest> testPlanes = {
+			{ TestFuncW0, EdgeFuncW0 },
+			{ TestFuncNY, EdgeFuncNY },
+			{ TestFuncPY, EdgeFuncPY },
+			{ TestFuncNX, EdgeFuncNX },
+			{ TestFuncPX, EdgeFuncPX },
+			{ TestFuncFar, EdgeFuncFar },
+			{ TestFuncNear, EdgeFuncNear }
+		};
 
-			// 동차좌표계에서 클리핑 진행
-			for (auto& p : testPlanes)
-			{
-				p.ClipTriangles(tvs);
-			}
+		// 동차좌표계에서 클리핑 진행
+		for (auto& p : testPlanes)
+		{
+			p.ClipTriangles(tvs);
 		}
 
 		size_t triangles = tvs.size() / 3;
