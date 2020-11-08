@@ -32,9 +32,6 @@ void SoftRenderer::DrawGizmo3D()
 	r.DrawLine(v0, v3, LinearColor::Blue);
 }
 
-Vector3 leftBonePosition;
-Vector3 rightBonePosition;
-
 // 게임 로직
 void SoftRenderer::Update3D(float InDeltaSeconds)
 {
@@ -88,12 +85,6 @@ void SoftRenderer::Render3D()
 	// 기즈모 그리기
 	DrawGizmo3D();
 
-	// 절두체 컬링 테스트를 위한 통계 변수
-	size_t totalObjects = g.GetScene().size();
-	size_t culledObjects = 0;
-	size_t intersectedObjects = 0;
-	size_t renderedObjects = 0;
-
 	for (auto it = g.SceneBegin(); it != g.SceneEnd(); ++it)
 	{
 		const GameObject& gameObject = *(*it);
@@ -104,7 +95,6 @@ void SoftRenderer::Render3D()
 		}
 
 		// 최종 변환 행렬
-		Matrix4x4 mMatrix = transform.GetWorldMatrix();
 		Matrix4x4 finalMatrix = pvMatrix * transform.GetWorldMatrix();
 
 		// 최종 변환 행렬로부터 평면의 방정식과 절두체 생성
@@ -129,20 +119,11 @@ void SoftRenderer::Render3D()
 		auto checkResult = frustumFromMatrix.CheckBound(boxBound);
 		if (checkResult == BoundCheckResult::Outside)
 		{
-			culledObjects++;
 			continue;
-		}
-		else if (checkResult == BoundCheckResult::Intersect)
-		{
-			// 겹친 게임 오브젝트를 통계에 포함
-			intersectedObjects++;
 		}
 
 		// 메시 그리기
 		DrawMesh3D(mesh, finalMatrix, LinearColor::White);
-
-		// 그린 물체를 통계에 포함
-		renderedObjects++;
 	}
 
 	r.PushStatisticText("Camera:" + mainCamera.GetTransform().GetWorldPosition().ToString());
