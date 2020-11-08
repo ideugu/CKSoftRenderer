@@ -43,46 +43,28 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	const InputManager& input = g.GetInputManager();
 
 	// 기본 설정 변수
-	static float duration = 3.f;
+	static float rotateSpeedSun = 40.f;
+	static float rotateSpeedEarth = 120.f;
+	static float rotateSpeedMoon = 48.f;
+	static float moveSpeed = 500.f;
 	static float fovSpeed = 100.f;
-	static float elapsedTime = 0.f;
 
-	// 애니메이션을 위한 커브 생성 ( 0~1 SineWave )
-	elapsedTime = Math::Clamp(elapsedTime + InDeltaSeconds, 0.f, duration);
-	if (elapsedTime == duration)
-	{
-		elapsedTime = 0.f;
-	}
-	float sinParam = elapsedTime * Math::TwoPI / duration;
-	float sinWave = (sinf(sinParam) + 1.f) * 0.5f;
+	// 게임 오브젝트와 카메라 오브젝트
+	GameObject& goSun = g.GetGameObject(GameEngine::SunGo);
+	GameObject& goEarth = g.GetGameObject(GameEngine::EarthGo);
+	GameObject& goMoon = g.GetGameObject(GameEngine::MoonGo);
+	CameraObject& camera = g.GetMainCamera();
 
-	// 플레이어의 이동
-	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
-	Mesh& m = g.GetMesh(goPlayer.GetMeshKey());
-	if (m.IsSkinnedMesh())
-	{
-		const std::string leftBone("left");
-		const std::string rightBone("right");
+	// 각 행성에 회전 부여
+	goSun.GetTransform().AddLocalYawRotation(rotateSpeedSun * InDeltaSeconds);
+	goEarth.GetTransform().AddLocalYawRotation(rotateSpeedEarth * InDeltaSeconds);
+	goMoon.GetTransform().AddLocalYawRotation(rotateSpeedMoon * InDeltaSeconds);
 
-		if (m.HasBone(leftBone))
-		{
-			Transform& boneTransform = m.GetBone(leftBone).GetTransform();
-			boneTransform.SetPosition(Vector3::UnitX * -sinWave);
-			const Transform& bindPoseTransform = m.GetBindPose(leftBone);
-			leftBonePosition = bindPoseTransform.GetPosition() + boneTransform.GetPosition();
-		}
-
-		if (m.HasBone(rightBone))
-		{
-			Transform& boneTransform = m.GetBone(rightBone).GetTransform();
-			boneTransform.SetPosition(Vector3::UnitX * sinWave);
-			const Transform& bindPoseTransform = m.GetBindPose(rightBone);
-			rightBonePosition = bindPoseTransform.GetPosition() + boneTransform.GetPosition();
-		}
-	}
+	// 카메라를 움직이되 카메라가 항상 태양을 바라보도록 설정
+	camera.GetTransform().AddWorldPosition(Vector3(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis), input.GetAxis(InputAxis::ZAxis)) * moveSpeed * InDeltaSeconds);
+	camera.SetLookAtRotation(goSun);
 
 	// 카메라 시야각 조절
-	CameraObject& camera = g.GetMainCamera();
 	float deltaFOV = input.GetAxis(InputAxis::WAxis) * fovSpeed * InDeltaSeconds;
 	camera.SetFOV(Math::Clamp(camera.GetFOV() + deltaFOV, 15.f, 150.f));
 }
@@ -122,7 +104,8 @@ void SoftRenderer::Render3D()
 		}
 
 		// 최종 변환 행렬
-		Matrix4x4 finalMatrix = pvMatrix * transform.GetModelingMatrix();
+		Matrix4x4 mMatrix = transform.GetWorldMatrix();
+		Matrix4x4 finalMatrix = pvMatrix * transform.GetWorldMatrix();
 
 		// 최종 변환 행렬로부터 평면의 방정식과 절두체 생성
 		Matrix4x4 finalTranposedMatrix = finalMatrix.Tranpose();
@@ -138,7 +121,6 @@ void SoftRenderer::Render3D()
 
 		// 메시 정보 얻어오기
 		const Mesh& mesh = g.GetMesh(gameObject.GetMeshKey());
-		LinearColor finalColor = gameObject.GetColor();
 
 		// 바운딩 영역은 로컬 정보를 그대로 사용
 		const Box& boxBound = mesh.GetBoxBound();
@@ -154,18 +136,16 @@ void SoftRenderer::Render3D()
 		{
 			// 겹친 게임 오브젝트를 통계에 포함
 			intersectedObjects++;
-			finalColor = LinearColor::Red;
 		}
 
 		// 메시 그리기
-		DrawMesh3D(mesh, finalMatrix, finalColor);
+		DrawMesh3D(mesh, finalMatrix, LinearColor::White);
 
 		// 그린 물체를 통계에 포함
 		renderedObjects++;
 	}
-	
-	r.PushStatisticText("Left Bone : " + leftBonePosition.ToString());
-	r.PushStatisticText("Right Bone : " + rightBonePosition.ToString());
+
+	r.PushStatisticText("Camera:" + mainCamera.GetTransform().GetWorldPosition().ToString());
 }
 
 void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, const LinearColor& InColor)

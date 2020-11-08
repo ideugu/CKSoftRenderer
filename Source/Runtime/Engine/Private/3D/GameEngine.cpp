@@ -4,10 +4,12 @@
 using namespace CK::DDD;
 
 // 메시
-const std::size_t GameEngine::QuadMesh = std::hash<std::string>()("SM_Quad");
+const std::size_t GameEngine::CubeMesh = std::hash<std::string>()("SM_Cube");
 
 // 게임 오브젝트
-const std::string GameEngine::PlayerGo("Player");
+const std::string GameEngine::SunGo("Sun");
+const std::string GameEngine::EarthGo("Earth");
+const std::string GameEngine::MoonGo("Moon");
 
 // 텍스쳐
 const std::size_t GameEngine::DiffuseTexture = std::hash<std::string>()("Diffuse");
@@ -63,47 +65,33 @@ bool GameEngine::Init()
 
 bool GameEngine::LoadResources()
 {
-	// 사각 메시
-	static float halfSize = 0.5f;
-	Mesh& quadMesh = CreateMesh(GameEngine::QuadMesh);
-	auto& v = quadMesh.GetVertices();
-	auto& i = quadMesh.GetIndices();
-	auto& uv = quadMesh.GetUVs();
+	// 큐브 메시
+	Mesh& cubeMesh = CreateMesh(GameEngine::CubeMesh);
+	auto& v = cubeMesh.GetVertices();
+	auto& i = cubeMesh.GetIndices();
 
-	v = {
-		Vector3(-1.f, -1.f, 1.f) * halfSize, Vector3(-1.f, 1.f, 1.f) * halfSize, Vector3(1.f, 1.f, 1.f) * halfSize, Vector3(1.f, -1.f, 1.f) * halfSize
-	};
+	static const float halfSize = 0.5f;
+	std::transform(cubeMeshPositions.begin(), cubeMeshPositions.end(), std::back_inserter(v), [&](auto& p) { return p * halfSize; });
+	std::transform(cubeMeshIndice.begin(), cubeMeshIndice.end(), std::back_inserter(i), [&](auto& p) { return p; });
 
-	i = {
-		0, 2, 1, 0, 3, 2
-	};
-
+	auto& uv = cubeMesh.GetUVs();
 	uv = {
-		Vector2(8.f, 48.f) / 64.f, Vector2(8.f, 56.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(16.f, 48.f) / 64.f
-	};
-
-	// 스킨드 메시 설정
-	quadMesh.SetMeshType(MeshType::Skinned);
-
-	// 리깅 수행
-	auto& bones = quadMesh.GetBones();
-	auto& connectedBones = quadMesh.GetConnectedBones();
-	auto& weights = quadMesh.GetWeights();
-
-	bones = {
-		{"left", Bone("left", Transform(Vector3(-1.f, 0.f, 1.f) * halfSize))},
-		{"right", Bone("right", Transform(Vector3(1.f, 0.f, 1.f) * halfSize))}
-	};
-	connectedBones = { 1, 1, 1, 1 };
-	weights = {
-		{ {"left"}, {1.f} },
-		{ {"left"}, {1.f} },
-		{ {"right"}, {1.f} },
-		{ {"right"}, {1.f} }
+		// Right
+		Vector2(0.f, 48.f) / 64.f, Vector2(8.f, 48.f) / 64.f, Vector2(8.f, 56.f) / 64.f, Vector2(0.f, 56.f) / 64.f,
+		// Front
+		Vector2(8.f, 48.f) / 64.f, Vector2(8.f, 56.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(16.f, 48.f) / 64.f,
+		// Back
+		Vector2(32.f, 48.f) / 64.f, Vector2(32.f, 56.f) / 64.f, Vector2(24.f, 56.f) / 64.f, Vector2(24.f, 48.f) / 64.f,
+		// Left
+		Vector2(24.f, 48.f) / 64.f, Vector2(16.f, 48.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(24.f, 56.f) / 64.f,
+		// Top
+		Vector2(8.f, 64.f) / 64.f, Vector2(16.f, 64.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(8.f, 56.f) / 64.f,
+		// Bottom
+		Vector2(16.f, 64.f) / 64.f, Vector2(24.f, 64.f) / 64.f, Vector2(24.f, 56.f) / 64.f, Vector2(16.f, 56.f) / 64.f
 	};
 
 	// 메시의 바운딩 볼륨 생성
-	quadMesh.CalculateBounds();
+	cubeMesh.CalculateBounds();
 
 	// 텍스쳐 로딩
 	Texture& diffuseTexture = CreateTexture(GameEngine::DiffuseTexture, GameEngine::SteveTexturePath);
@@ -114,20 +102,33 @@ bool GameEngine::LoadResources()
 
 bool GameEngine::LoadScene()
 {
-	// 플레이어
-	constexpr float cubeScale = 100.f;
+	static const float sunScale = 100.f;
+	static const float earthScale = 40.f;
+	static const float moonScale = 30.f;
+	static const Vector3 earthOffset(500.f, 0.0f, 0.f);
+	static const Vector3 moonOffset(400.f, 0.0f, 0.f);
 
-	// 플레이어 설정
-	GameObject& goPlayer = CreateNewGameObject(GameEngine::PlayerGo);
-	goPlayer.SetMesh(GameEngine::QuadMesh);
-	goPlayer.GetTransform().SetPosition(Vector3::Zero);
-	goPlayer.GetTransform().SetScale(Vector3::One * cubeScale);
-	goPlayer.SetColor(LinearColor::White);
+	// 태양계
+	GameObject& goSun = CreateNewGameObject(GameEngine::SunGo);
+	goSun.SetMesh(GameEngine::CubeMesh);
+	goSun.GetTransform().SetWorldScale(Vector3::One * sunScale);
+
+	GameObject& goEarth = CreateNewGameObject(GameEngine::EarthGo);
+	goEarth.SetMesh(GameEngine::CubeMesh);
+	goEarth.GetTransform().SetWorldPosition(earthOffset);
+	goEarth.GetTransform().SetWorldScale(Vector3::One * earthScale);
+	goEarth.SetParent(goSun);
+
+	GameObject& goMoon = CreateNewGameObject(GameEngine::MoonGo);
+	goMoon.SetMesh(GameEngine::CubeMesh);
+	goMoon.GetTransform().SetWorldPosition(moonOffset);
+	goMoon.GetTransform().SetWorldScale(Vector3::One * moonScale);
+	goMoon.SetParent(goEarth);
 
 	// 카메라 설정
 	CameraObject& mainCamera = GetMainCamera();
-	mainCamera.GetTransform().SetPosition(Vector3(0.f, 0.f, 400.f));
-	mainCamera.GetTransform().SetRotation(Rotator(180.f, 0.f, 0.f));
+	mainCamera.GetTransform().SetWorldPosition(Vector3(700.f, 700.f, 700.f));
+
 	return true;
 }
 

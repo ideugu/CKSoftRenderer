@@ -95,19 +95,19 @@ FORCEINLINE constexpr Transform Transform::LocalToWorld(const Transform& InParen
 	Transform result;
 	result.Rotation = InParentWorldTransform.Rotation * Rotation;
 	result.Scale = InParentWorldTransform.Scale * Scale;
-	result.Position = InParentWorldTransform.Rotation.RotateVector(InParentWorldTransform.Scale * Position) + InParentWorldTransform.Position;
+	result.Position = InParentWorldTransform.Position + InParentWorldTransform.Rotation.RotateVector(InParentWorldTransform.Scale * Position);
 	return result;
 }
 
 FORCEINLINE constexpr Transform Transform::WorldToLocal(const Transform& InParentWorldTransform) const
 {
+	// 현재 트랜스폼 정보가 월드인 경우
 	Transform invParent = InParentWorldTransform.Inverse();
 
-	// 현재 트랜스폼 정보가 월드인 경우
 	Transform result;
 	result.Scale = invParent.GetScale() * Scale;
 	result.Rotation = invParent.GetRotation() * Rotation;
-	result.Position = invParent.GetPosition() + Position;
+	result.Position = invParent.Position + invParent.Rotation.RotateVector(invParent.Scale * Position);
 	return result;
 }
 
