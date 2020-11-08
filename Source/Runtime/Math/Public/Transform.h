@@ -101,13 +101,13 @@ FORCEINLINE constexpr Transform Transform::LocalToWorld(const Transform& InParen
 
 FORCEINLINE constexpr Transform Transform::WorldToLocal(const Transform& InParentWorldTransform) const
 {
+	// 현재 트랜스폼 정보가 월드인 경우
 	Transform invParent = InParentWorldTransform.Inverse();
 
-	// 현재 트랜스폼 정보가 월드인 경우
 	Transform result;
 	result.Scale = invParent.GetScale() * Scale;
 	result.Rotation = invParent.GetRotation() * Rotation;
-	result.Position = invParent.GetPosition() + Position;
+	result.Position = invParent.Position + invParent.Rotation.RotateVector(invParent.Scale * Position);
 	return result;
 }
 
