@@ -30,6 +30,17 @@ void SoftRenderer::DrawGizmo3D()
 	r.DrawLine(v0, v1, LinearColor::Red);
 	r.DrawLine(v0, v2, LinearColor::Green);
 	r.DrawLine(v0, v3, LinearColor::Blue);
+
+	// 바닥 기즈모
+	DrawMode prevShowMode = GetDrawMode();
+	SetDrawMode(DrawMode::Wireframe);
+	{
+		static float planeScale = 100.f;
+		const Mesh& planeMesh = g.GetMesh(GameEngine::PlaneMesh);
+		Transform pt(Vector3::Zero, Quaternion::Identity, Vector3::One * planeScale);
+		DrawMesh3D(planeMesh, pvMatrix * pt.GetMatrix(), _WireframeColor);
+	}
+	SetDrawMode(prevShowMode);
 }
 
 // 게임 로직
@@ -40,36 +51,68 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	const InputManager& input = g.GetInputManager();
 
 	// 기본 설정 변수
-	static float rotateSpeedSun = 40.f;
-	static float rotateSpeedEarth = 120.f;
-	static float rotateSpeedMoon = 48.f;
-	static float moveSpeed = 500.f;
 	static float fovSpeed = 100.f;
+	static float rotateSpeed = 180.f;
+	static float moveSpeed = 500.f;
 
-	// 게임 오브젝트와 카메라 오브젝트
-	GameObject& goSun = g.GetGameObject(GameEngine::SunGo);
-	GameObject& goEarth = g.GetGameObject(GameEngine::EarthGo);
-	GameObject& goMoon = g.GetGameObject(GameEngine::MoonGo);
+	// 게임 로직에서 사용할 게임 오브젝트 레퍼런스
+	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
+	GameObject& goCameraRig = g.GetGameObject(GameEngine::CameraRigGo);
 	CameraObject& camera = g.GetMainCamera();
 
-	// 각 행성에 회전 부여
-	goSun.GetTransform().AddLocalYawRotation(rotateSpeedSun * InDeltaSeconds);
-	goEarth.GetTransform().AddLocalYawRotation(rotateSpeedEarth * InDeltaSeconds);
-	goMoon.GetTransform().AddLocalYawRotation(rotateSpeedMoon * InDeltaSeconds);
+	// 입력에 따른 이동
+	goPlayer.GetTransform().AddLocalYawRotation(-input.GetAxis(InputAxis::XAxis) * rotateSpeed * InDeltaSeconds);
+	goPlayer.GetTransform().AddLocalPosition(goPlayer.GetTransform().GetLocalZ() * input.GetAxis(InputAxis::YAxis) * moveSpeed * InDeltaSeconds);
 
-	// 카메라를 움직이되 카메라가 항상 태양을 바라보도록 설정
-	camera.GetTransform().AddWorldPosition(Vector3(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis), input.GetAxis(InputAxis::ZAxis)) * moveSpeed * InDeltaSeconds);
-	camera.SetLookAtRotation(goSun);
-
-	// 카메라 시야각 조절
-	float deltaFOV = input.GetAxis(InputAxis::WAxis) * fovSpeed * InDeltaSeconds;
-	camera.SetFOV(Math::Clamp(camera.GetFOV() + deltaFOV, 15.f, 150.f));
+	// 카메라 화각 설정
+	float newFOV = Math::Clamp(camera.GetFOV() + input.GetAxis(InputAxis::ZAxis) * fovSpeed * InDeltaSeconds, 5.f, 179.f);
+	camera.SetFOV(newFOV);
 }
 
 // 캐릭터 애니메이션 로직
 void SoftRenderer::LateUpdate3D(float InDeltaSeconds)
 {
-	return;
+	// 기본 레퍼런스
+	GameEngine& g = Get3DGameEngine();
+
+	// 기본 설정 변수
+	static float elapsedTime = 0.f;
+	static float neckLength = 5.f;
+	static float armLegLength = 0.7f;
+	static float neckDegree = 15.f;
+	static float armLegDegree = 30.f;
+	elapsedTime += InDeltaSeconds;
+
+	// 애니메이션을 위한 커브 생성 
+	float armLegCurrent = Math::FMod(elapsedTime, armLegLength) * Math::TwoPI / armLegLength;
+	float neckCurrent = Math::FMod(elapsedTime, neckLength) * Math::TwoPI / neckLength;
+
+	float armLegCurve = sinf(armLegCurrent) * armLegDegree;
+	float neckCurve = sinf(neckCurrent) * neckDegree;
+
+	// 캐릭터 레퍼런스
+	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
+
+	// 캐릭터 메시
+	Mesh& m = g.GetMesh(goPlayer.GetMeshKey());
+
+	// 목의 회전
+	Bone& neckBone = m.GetBone(GameEngine::NeckBone);
+	neckBone.GetTransform().SetLocalRotation(Rotator(neckCurve, 0.f, 0.f));
+
+	// 팔의 회전
+	Bone& leftArmBone = m.GetBone(GameEngine::LeftArmBone);
+	leftArmBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, armLegCurve));
+
+	Bone& rightArmBone = m.GetBone(GameEngine::RightArmBone);
+	rightArmBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, -armLegCurve));
+
+	// 다리의 회전
+	Bone& leftLegBone = m.GetBone(GameEngine::LeftLegBone);
+	leftLegBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, -armLegCurve));
+
+	Bone& rightLegBone = m.GetBone(GameEngine::RightLegBone);
+	rightLegBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, armLegCurve));
 }
 
 // 렌더링 로직
@@ -122,11 +165,44 @@ void SoftRenderer::Render3D()
 			continue;
 		}
 
+		// 스키닝이고 WireFrame인 경우 본을 그리기
+		if (mesh.IsSkinnedMesh() && IsWireframeDrawing())
+		{
+			const Mesh& boneMesh = g.GetMesh(GameEngine::ArrowMesh);
+			for (const auto& b : mesh.GetBones())
+			{
+				if (!b.second.HasParent())
+				{
+					continue;
+				}
+				const Bone& bone = b.second;
+				const Bone& parentBone = mesh.GetBone(bone.GetParentName());
+				const Transform& tGameObject = transform.GetWorldTransform();
+
+				// 모델링 공간에서의 본의 위치
+				const Transform& t1 = parentBone.GetTransform().GetWorldTransform();
+				const Transform& t2 = bone.GetTransform().GetWorldTransform();
+
+				// 게임 월드 공간에서의 본의 위치
+				const Transform& wt1 = t1.LocalToWorld(tGameObject);
+				const Transform& wt2 = t2.LocalToWorld(tGameObject);
+
+				Vector3 boneVector = wt2.GetPosition() - wt1.GetPosition();
+				Transform tboneObject(wt1.GetPosition(), Quaternion(boneVector), Vector3(10.f, 10.f, boneVector.Size()));
+				Matrix4x4 boneMatrix = pvMatrix * tboneObject.GetMatrix();
+				DrawMesh3D(boneMesh, boneMatrix, LinearColor::Red);
+			}
+		}
+
 		// 메시 그리기
 		DrawMesh3D(mesh, finalMatrix, LinearColor::White);
-	}
 
-	r.PushStatisticText("Camera:" + mainCamera.GetTransform().GetWorldPosition().ToString());
+		// 플레이어 위치 정보
+		if (gameObject == GameEngine::PlayerGo)
+		{
+			r.PushStatisticText("Player:" + gameObject.GetTransform().GetWorldPosition().ToString());
+		}
+	}
 }
 
 void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, const LinearColor& InColor)
@@ -145,19 +221,35 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 		// 위치에 대해 스키닝 연산 수행
 		if (InMesh.IsSkinnedMesh())
 		{
-			Vector3 deltaPosition;
+			Vector4 totalPosition = Vector4::Zero;
 			Weight w = InMesh.GetWeights()[vi];
 			for (size_t wi = 0; wi < InMesh.GetConnectedBones()[vi]; ++wi)
 			{
 				std::string boneName = w.Bones[wi];
 				if (InMesh.HasBone(boneName))
 				{
-					const Transform& boneTransform = InMesh.GetBone(boneName).GetTransform();
-					deltaPosition += boneTransform.GetPosition() * w.Values[wi];
+					const Bone& b = InMesh.GetBone(boneName);
+					const Transform& t = b.GetTransform().GetWorldTransform();  // 월드 공간
+					const Transform& bindPose = b.GetBindPose(); // 월드 공간
+
+					// BindPose 공간을 중심으로 Bone의 로컬 공간을 계산
+					Transform boneLocal = t.WorldToLocal(bindPose);
+
+					// BindPose 공간으로 점을 변화
+					Vector3 localPosition = bindPose.WorldToLocalVector(vertices[vi].Position.ToVector3());
+
+					// BindPose 공간에서의 점의 최종 위치
+					Vector3 skinnedLocalPosition = boneLocal.GetMatrix() * localPosition;
+
+					// 월드 공간으로 다시 변경
+					Vector3 skinnedWorldPosition = bindPose.GetMatrix() * skinnedLocalPosition;
+
+					// 가중치를 곱해서 더해줌
+					totalPosition += Vector4(skinnedWorldPosition * w.Values[wi], true);
 				}
 			}
 
-			vertices[vi].Position += Vector4(deltaPosition, false);
+			vertices[vi].Position = totalPosition;
 		}
 
 		if (InMesh.HasColor())
