@@ -133,6 +133,17 @@ static auto EdgeFuncNY = [](const Vertex3D& InStartVertex, const Vertex3D& InEnd
 	return InStartVertex * (1.f - t) + InEndVertex * t;
 };
 
+static auto TestFuncHNY = [](const Vertex3D& InVertex) {
+	return InVertex.Position.Y < 0.f;
+};
+
+static auto EdgeFuncHNY = [](const Vertex3D& InStartVertex, const Vertex3D& InEndVertex) {
+	float p1 = InStartVertex.Position.Y;
+	float p2 = InEndVertex.Position.Y;
+	float t = p1 / (p1 - p2);
+	return InStartVertex * (1.f - t) + InEndVertex * t;
+};
+
 static auto TestFuncPY = [](const Vertex3D& InVertex) {
 	return InVertex.Position.Y > InVertex.Position.W;
 };
@@ -140,6 +151,17 @@ static auto TestFuncPY = [](const Vertex3D& InVertex) {
 static auto EdgeFuncPY = [](const Vertex3D& InStartVertex, const Vertex3D& InEndVertex) {
 	float p1 = InStartVertex.Position.W - InStartVertex.Position.Y;
 	float p2 = InEndVertex.Position.W - InEndVertex.Position.Y;
+	float t = p1 / (p1 - p2);
+	return InStartVertex * (1.f - t) + InEndVertex * t;
+};
+
+static auto TestFuncHPY = [](const Vertex3D& InVertex) {
+	return InVertex.Position.Y > 0.f;
+};
+
+static auto EdgeFuncHPY = [](const Vertex3D& InStartVertex, const Vertex3D& InEndVertex) {
+	float p1 = - InStartVertex.Position.Y;
+	float p2 = - InEndVertex.Position.Y;
 	float t = p1 / (p1 - p2);
 	return InStartVertex * (1.f - t) + InEndVertex * t;
 };
@@ -155,6 +177,17 @@ static auto EdgeFuncNX = [](const Vertex3D& InStartVertex, const Vertex3D& InEnd
 	return InStartVertex * (1.f - t) + InEndVertex * t;
 };
 
+static auto TestFuncHNX = [](const Vertex3D& InVertex) {
+	return InVertex.Position.X < 0.f;
+};
+
+static auto EdgeFuncHNX = [](const Vertex3D& InStartVertex, const Vertex3D& InEndVertex) {
+	float p1 = InStartVertex.Position.X;
+	float p2 = InEndVertex.Position.X;
+	float t = p1 / (p1 - p2);
+	return InStartVertex * (1.f - t) + InEndVertex * t;
+};
+
 static auto TestFuncPX = [](const Vertex3D& InVertex) {
 	return InVertex.Position.X > InVertex.Position.W;
 };
@@ -162,6 +195,17 @@ static auto TestFuncPX = [](const Vertex3D& InVertex) {
 static auto EdgeFuncPX = [](const Vertex3D& InStartVertex, const Vertex3D& InEndVertex) {
 	float p1 = InStartVertex.Position.W - InStartVertex.Position.X;
 	float p2 = InEndVertex.Position.W - InEndVertex.Position.X;
+	float t = p1 / (p1 - p2);
+	return InStartVertex * (1.f - t) + InEndVertex * t;
+};
+
+static auto TestFuncHPX = [](const Vertex3D& InVertex) {
+	return InVertex.Position.X > 0.f;
+};
+
+static auto EdgeFuncHPX = [](const Vertex3D& InStartVertex, const Vertex3D& InEndVertex) {
+	float p1 = -InStartVertex.Position.X;
+	float p2 = -InEndVertex.Position.X;
 	float t = p1 / (p1 - p2);
 	return InStartVertex * (1.f - t) + InEndVertex * t;
 };

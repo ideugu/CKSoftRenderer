@@ -67,7 +67,6 @@ bool PMXLoader::LoadPMX(GameEngine& InGameEngine, Mesh& InMesh, std::wstring InF
 
 	for (size_t ix = 0; ix < x.vertex_count; ++ix)
 	{
-		//x.vertices[ix].skinning;
 		pmx::PmxVertexSkinningType type = x.vertices[ix].skinning_type;
 		switch (type)
 		{
@@ -84,46 +83,41 @@ bool PMXLoader::LoadPMX(GameEngine& InGameEngine, Mesh& InMesh, std::wstring InF
 		}
 		case pmx::PmxVertexSkinningType::BDEF2:
 		{
-			cb.push_back(0);
+			cb.push_back(2);
+			pmx::PmxVertexSkinningBDEF2* s = static_cast<pmx::PmxVertexSkinningBDEF2*>(x.vertices[ix].skinning.get());
+			std::wstring boneKey1 = boneBuffer[s->bone_index1];
+			std::wstring boneKey2 = boneBuffer[s->bone_index2];
+			float boneWeight1 = s->bone_weight;
 			Weight newWeight;
+			newWeight.Bones.emplace_back(boneKey1);
+			newWeight.Values.emplace_back(boneWeight1);
+			newWeight.Bones.emplace_back(boneKey2);
+			newWeight.Values.emplace_back(1.f - boneWeight1);
 			w.emplace_back(newWeight);
-			//cb.push_back(2);
-			//pmx::PmxVertexSkinningBDEF2* s = static_cast<pmx::PmxVertexSkinningBDEF2*>(x.vertices[ix].skinning.get());
-			//std::wstring boneKey1 = boneBuffer[s->bone_index1];
-			//std::wstring boneKey2 = boneBuffer[s->bone_index2];
-			//float boneWeight1 = s->bone_weight;
-			//Weight newWeight;
-			//newWeight.Bones.emplace_back(boneKey1);
-			//newWeight.Values.emplace_back(boneWeight1);
-			//newWeight.Bones.emplace_back(boneKey2);
-			//newWeight.Values.emplace_back(1.f - boneWeight1);
-			//w.emplace_back(newWeight);
 			break;
 		}
 		case pmx::PmxVertexSkinningType::BDEF4:
 		{
-			cb.push_back(0);
+			cb.push_back(4);
+			pmx::PmxVertexSkinningBDEF4* s = static_cast<pmx::PmxVertexSkinningBDEF4*>(x.vertices[ix].skinning.get());
+			std::wstring boneKey1 = boneBuffer[s->bone_index1];
+			std::wstring boneKey2 = boneBuffer[s->bone_index2];
+			std::wstring boneKey3 = boneBuffer[s->bone_index3];
+			std::wstring boneKey4 = boneBuffer[s->bone_index4];
+			float boneWeight1 = s->bone_weight1;
+			float boneWeight2 = s->bone_weight2;
+			float boneWeight3 = s->bone_weight3;
+			float boneWeight4 = s->bone_weight4;
 			Weight newWeight;
+			newWeight.Bones.emplace_back(boneKey1);
+			newWeight.Values.emplace_back(boneWeight1);
+			newWeight.Bones.emplace_back(boneKey2);
+			newWeight.Values.emplace_back(boneWeight2);
+			newWeight.Bones.emplace_back(boneKey3);
+			newWeight.Values.emplace_back(boneWeight3);
+			newWeight.Bones.emplace_back(boneKey4);
+			newWeight.Values.emplace_back(boneWeight4);
 			w.emplace_back(newWeight);
-			//pmx::PmxVertexSkinningBDEF4* s = static_cast<pmx::PmxVertexSkinningBDEF4*>(x.vertices[ix].skinning.get());
-			//std::wstring boneKey1 = boneBuffer[s->bone_index1];
-			//std::wstring boneKey2 = boneBuffer[s->bone_index2];
-			//std::wstring boneKey3 = boneBuffer[s->bone_index3];
-			//std::wstring boneKey4 = boneBuffer[s->bone_index4];
-			//float boneWeight1 = s->bone_weight1;
-			//float boneWeight2 = s->bone_weight2;
-			//float boneWeight3 = s->bone_weight3;
-			//float boneWeight4 = s->bone_weight4;
-			//Weight newWeight;
-			//newWeight.Bones.emplace_back(boneKey1);
-			//newWeight.Values.emplace_back(boneWeight1);
-			//newWeight.Bones.emplace_back(boneKey2);
-			//newWeight.Values.emplace_back(boneWeight2);
-			//newWeight.Bones.emplace_back(boneKey3);
-			//newWeight.Values.emplace_back(boneWeight3);
-			//newWeight.Bones.emplace_back(boneKey4);
-			//newWeight.Values.emplace_back(boneWeight4);
-			//w.emplace_back(newWeight);
 			break;
 		}
 		default:
@@ -134,10 +128,7 @@ bool PMXLoader::LoadPMX(GameEngine& InGameEngine, Mesh& InMesh, std::wstring InF
 			break;
 		}
 		}
-		//w.push_back(Weight());
-		//.emplace_back(Vector2(x.vertices[ix].uv[0], 1.f - x.vertices[ix].uv[1]));
 	}
-
 
 	size_t textureId = 0;
 	for (size_t ix = 0; ix < x.texture_count; ++ix)

@@ -43,6 +43,9 @@ void SoftRenderer::DrawGizmo3D()
 	SetDrawMode(prevShowMode);
 }
 
+bool useTiledRendering = false;
+BYTE tileNumber = 0;
+
 // 게임 로직
 void SoftRenderer::Update3D(float InDeltaSeconds)
 {
@@ -54,6 +57,8 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	static float fovSpeed = 100.f;
 	static float rotateSpeed = 180.f;
 	static float moveSpeed = 500.f;
+	static float elapsedTime = 0.f;
+	static float tileChangeDuration = 1.f;
 
 	// 게임 로직에서 사용할 게임 오브젝트 레퍼런스
 	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
@@ -67,6 +72,25 @@ void SoftRenderer::Update3D(float InDeltaSeconds)
 	// 카메라 화각 설정
 	float newFOV = Math::Clamp(camera.GetFOV() + input.GetAxis(InputAxis::ZAxis) * fovSpeed * InDeltaSeconds, 5.f, 179.f);
 	camera.SetFOV(newFOV);
+
+	// 타일렌더링 관련 변수
+	if (input.IsReleased(InputButton::Space))
+	{
+		useTiledRendering = !useTiledRendering;
+	}
+
+	elapsedTime += InDeltaSeconds;
+	elapsedTime = Math::Clamp(elapsedTime, 0.f, tileChangeDuration);
+	if (elapsedTime == tileChangeDuration)
+	{
+		tileNumber++;
+		if (tileNumber == 4)
+		{
+			tileNumber = 0;
+		}
+
+		elapsedTime = 0.f;
+	}
 }
 
 // 캐릭터 애니메이션 로직
@@ -77,17 +101,19 @@ void SoftRenderer::LateUpdate3D(float InDeltaSeconds)
 
 	// 기본 설정 변수
 	static float elapsedTime = 0.f;
-	static float neckLength = 5.f;
-	static float armLegLength = 0.7f;
-	static float neckDegree = 15.f;
-	static float armLegDegree = 30.f;
+	static float neckLength = 3.f;
+	static float armLegLength = 3.f;
+	static float neckDegree = 30.f;
+	static float armDegree = 50.f;
+	static float legDegree = 5.f;
 	elapsedTime += InDeltaSeconds;
 
 	// 애니메이션을 위한 커브 생성 
 	float armLegCurrent = Math::FMod(elapsedTime, armLegLength) * Math::TwoPI / armLegLength;
 	float neckCurrent = Math::FMod(elapsedTime, neckLength) * Math::TwoPI / neckLength;
 
-	float armLegCurve = sinf(armLegCurrent) * armLegDegree;
+	float armCurve = sinf(armLegCurrent) * armDegree;
+	float legCurve = sinf(armLegCurrent) * legDegree;
 	float neckCurve = sinf(neckCurrent) * neckDegree;
 
 	// 캐릭터 레퍼런스
@@ -100,19 +126,19 @@ void SoftRenderer::LateUpdate3D(float InDeltaSeconds)
 	Bone& neckBone = m.GetBone(L"首");
 	neckBone.GetTransform().SetLocalRotation(Rotator(neckCurve, 0.f, 0.f));
 
-	//// 팔의 회전
-	//Bone& leftArmBone = m.GetBone(GameEngine::LeftArmBone);
-	//leftArmBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, armLegCurve));
+	// 팔의 회전
+	Bone& leftArmBone = m.GetBone(L"右肩P");
+	leftArmBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, armCurve));
 
-	//Bone& rightArmBone = m.GetBone(GameEngine::RightArmBone);
-	//rightArmBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, -armLegCurve));
+	Bone& rightArmBone = m.GetBone(L"左肩P");
+	rightArmBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, -armCurve));
 
-	//// 다리의 회전
-	//Bone& leftLegBone = m.GetBone(GameEngine::LeftLegBone);
-	//leftLegBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, -armLegCurve));
+	// 다리의 회전
+	Bone& leftLegBone = m.GetBone(L"右足D");
+	leftLegBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, -legCurve));
 
-	//Bone& rightLegBone = m.GetBone(GameEngine::RightLegBone);
-	//rightLegBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, armLegCurve));
+	Bone& rightLegBone = m.GetBone(L"左足D");
+	rightLegBone.GetTransform().SetLocalRotation(Rotator(0.f, 0.f, legCurve));
 }
 
 // 렌더링 로직
@@ -210,6 +236,13 @@ void SoftRenderer::Render3D()
 			r.PushStatisticText("Player:" + gameObject.GetTransform().GetWorldPosition().ToString());
 		}
 	}
+
+	std::string status = (useTiledRendering) ? "ON" : "OFF";
+	r.PushStatisticText("Tiled Rendering: " + status);
+	if (useTiledRendering)
+	{
+		r.PushStatisticText("Current Tile: " + std::to_string(tileNumber));
+	}
 }
 
 void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, const LinearColor& InColor)
@@ -253,11 +286,14 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 					Vector3 skinnedWorldPosition = bindPose.GetMatrix() * skinnedLocalPosition;
 
 					// 가중치를 곱해서 더해줌
-					totalPosition += Vector4(skinnedWorldPosition * w.Values[wi], true);
+					totalPosition += Vector4(skinnedWorldPosition, true) * w.Values[wi];
 				}
 			}
 
-			vertices[vi].Position = totalPosition;
+			if (connectedBoneNumbers != 0)
+			{
+				vertices[vi].Position = totalPosition;
+			}
 		}
 
 		if (InMesh.HasColor())
@@ -274,6 +310,81 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 	// 정점 변환 진행
 	VertexShader3D(vertices, InMatrix);
 
+	// 동차좌표계에서 클리핑을 위한 설정
+	std::vector<PerspectiveTest> testPlanes;
+	
+	if (!useTiledRendering)
+	{
+		testPlanes = {
+			{ TestFuncW0, EdgeFuncW0 },
+			{ TestFuncNY, EdgeFuncNY },
+			{ TestFuncPY, EdgeFuncPY },
+			{ TestFuncNX, EdgeFuncNX },
+			{ TestFuncPX, EdgeFuncPX },
+			{ TestFuncFar, EdgeFuncFar },
+			{ TestFuncNear, EdgeFuncNear }
+		};
+	}
+	else
+	{
+		switch (tileNumber)
+		{
+		case 0:
+		{
+			testPlanes = {
+				{ TestFuncW0, EdgeFuncW0 },
+				{ TestFuncHNY, EdgeFuncHNY },
+				{ TestFuncPY, EdgeFuncPY },
+				{ TestFuncNX, EdgeFuncNX },
+				{ TestFuncHPX, EdgeFuncHPX },
+				{ TestFuncFar, EdgeFuncFar },
+				{ TestFuncNear, EdgeFuncNear }
+			};
+			break;
+		}
+		case 1:
+		{
+			testPlanes = {
+				{ TestFuncW0, EdgeFuncW0 },
+				{ TestFuncHNY, EdgeFuncHNY },
+				{ TestFuncPY, EdgeFuncPY },
+				{ TestFuncHNX, EdgeFuncHNX },
+				{ TestFuncPX, EdgeFuncPX },
+				{ TestFuncFar, EdgeFuncFar },
+				{ TestFuncNear, EdgeFuncNear }
+			};
+			break;
+		}
+		case 2:
+		{
+			testPlanes = {
+				{ TestFuncW0, EdgeFuncW0 },
+				{ TestFuncNY, EdgeFuncNY },
+				{ TestFuncHPY, EdgeFuncHPY },
+				{ TestFuncNX, EdgeFuncNX },
+				{ TestFuncHPX, EdgeFuncHPX },
+				{ TestFuncFar, EdgeFuncFar },
+				{ TestFuncNear, EdgeFuncNear }
+			};
+			break;
+		}
+		case 3:
+		{
+			testPlanes = {
+				{ TestFuncW0, EdgeFuncW0 },
+				{ TestFuncNY, EdgeFuncNY },
+				{ TestFuncHPY, EdgeFuncHPY },
+				{ TestFuncHNX, EdgeFuncHNX },
+				{ TestFuncPX, EdgeFuncPX },
+				{ TestFuncFar, EdgeFuncFar },
+				{ TestFuncNear, EdgeFuncNear }
+			};
+			break;
+		}
+		}
+
+	}
+
 	// 삼각형 별로 그리기
 	auto textureIndice = InMesh.GetTextureIndices();
 	if (IsWireframeDrawing() && textureIndice.size() == 0)
@@ -282,17 +393,6 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 		{
 			int bi0 = ti * 3, bi1 = ti * 3 + 1, bi2 = ti * 3 + 2;
 			std::vector<Vertex3D> tvs = { vertices[indice[bi0]] , vertices[indice[bi1]] , vertices[indice[bi2]] };
-
-			// 동차좌표계에서 클리핑을 위한 설정
-			std::vector<PerspectiveTest> testPlanes = {
-				{ TestFuncW0, EdgeFuncW0 },
-				{ TestFuncNY, EdgeFuncNY },
-				{ TestFuncPY, EdgeFuncPY },
-				{ TestFuncNX, EdgeFuncNX },
-				{ TestFuncPX, EdgeFuncPX },
-				{ TestFuncFar, EdgeFuncFar },
-				{ TestFuncNear, EdgeFuncNear }
-			};
 
 			// 동차좌표계에서 클리핑 진행
 			for (auto& p : testPlanes)
@@ -317,17 +417,6 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 			{
 				size_t bi0 = ti, bi1 = ti + 1, bi2 = ti + 2;
 				std::vector<Vertex3D> tvs = { vertices[indice[bi0]] , vertices[indice[bi1]] , vertices[indice[bi2]] };
-
-				// 동차좌표계에서 클리핑을 위한 설정
-				std::vector<PerspectiveTest> testPlanes = {
-					{ TestFuncW0, EdgeFuncW0 },
-					{ TestFuncNY, EdgeFuncNY },
-					{ TestFuncPY, EdgeFuncPY },
-					{ TestFuncNX, EdgeFuncNX },
-					{ TestFuncPX, EdgeFuncPX },
-					{ TestFuncFar, EdgeFuncFar },
-					{ TestFuncNear, EdgeFuncNear }
-				};
 
 				// 동차좌표계에서 클리핑 진행
 				for (auto& p : testPlanes)
