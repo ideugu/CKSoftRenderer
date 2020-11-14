@@ -3,28 +3,15 @@
 #include <random>
 using namespace CK::DDD;
 
-// 본 명칭
-const std::string GameEngine::RootBone("RootBone");
-const std::string GameEngine::PelvisBone("PelvisBone");
-const std::string GameEngine::SpineBone("SpineBone");
-const std::string GameEngine::LeftArmBone("LeftArmBone");
-const std::string GameEngine::RightArmBone("RightArmBone");
-const std::string GameEngine::NeckBone("NeckBone");
-const std::string GameEngine::LeftLegBone("LeftLegBone");
-const std::string GameEngine::RightLegBone("RightLegBone");
-
 // 메시
-const std::size_t GameEngine::CharacterMesh = std::hash<std::string>()("SK_Steve");
+const std::size_t GameEngine::CharacterMesh = std::hash<std::string>()("SK_Character");
 const std::size_t GameEngine::ArrowMesh = std::hash<std::string>()("SM_Arrow");
 const std::size_t GameEngine::PlaneMesh = std::hash<std::string>()("SM_Plane");
+const std::string GameEngine::CharacterPath("Character.pmx");
 
 // 게임 오브젝트
 const std::string GameEngine::PlayerGo("Player");
 const std::string GameEngine::CameraRigGo("CameraRig");
-
-// 텍스쳐
-const std::size_t GameEngine::DiffuseTexture = std::hash<std::string>()("Diffuse");
-const std::string GameEngine::SteveTexturePath("Steve.png");
 
 struct GameObjectCompare
 {
@@ -76,162 +63,6 @@ bool GameEngine::Init()
 
 bool GameEngine::LoadResources()
 {
-	// 캐릭터 메시 생성
-	constexpr Vector3 headSize(0.5f, 0.5f, 0.5f);
-	constexpr Vector3 bodySize(0.5f, 0.75f, 0.25f);
-	constexpr Vector3 armLegSize(0.25f, 0.75f, 0.25f);
-
-	constexpr BYTE totalCharacterParts = 6;
-	Mesh& characterMesh = CreateMesh(GameEngine::CharacterMesh);
-	auto& v = characterMesh.GetVertices();
-	auto& i = characterMesh.GetIndices();
-	auto& uv = characterMesh.GetUVs();
-
-	// 6개의 파트로 구성되어 있음.
-	static constexpr std::array<Vector3, totalCharacterParts> cubeMeshSize = {
-		headSize, bodySize, armLegSize, armLegSize, armLegSize, armLegSize
-	};
-
-	static constexpr std::array<Vector3, totalCharacterParts> cubeMeshOffset = {
-		Vector3(0.f, 3.5f, 0.f), Vector3(0.f, 2.25f, 0.f), Vector3(-0.75f, 2.25f, 0.f), Vector3(0.75f, 2.25f, 0.f), Vector3(-0.25f, 0.75f, 0.f), Vector3(0.25f, 0.75f, 0.f)
-	};
-
-	for (size_t part = 0; part < totalCharacterParts; part++)
-	{
-		std::transform(cubeMeshPositions.begin(), cubeMeshPositions.end(), std::back_inserter(v), [&](auto& p) { return p * cubeMeshSize[part] + cubeMeshOffset[part]; });
-		std::transform(cubeMeshIndice.begin(), cubeMeshIndice.end(), std::back_inserter(i), [&](auto& p) { return p + 24 * part; });
-	}
-
-	uv = {
-		// HeadRight
-		Vector2(0.f, 48.f) / 64.f, Vector2(8.f, 48.f) / 64.f, Vector2(8.f, 56.f) / 64.f, Vector2(0.f, 56.f) / 64.f,
-		// HeadFront
-		Vector2(8.f, 48.f) / 64.f, Vector2(8.f, 56.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(16.f, 48.f) / 64.f,
-		// HeadBack
-		Vector2(32.f, 48.f) / 64.f, Vector2(32.f, 56.f) / 64.f, Vector2(24.f, 56.f) / 64.f, Vector2(24.f, 48.f) / 64.f,
-		// HeadLeft
-		Vector2(24.f, 48.f) / 64.f, Vector2(16.f, 48.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(24.f, 56.f) / 64.f,
-		// HeadTop
-		Vector2(8.f, 64.f) / 64.f, Vector2(16.f, 64.f) / 64.f, Vector2(16.f, 56.f) / 64.f, Vector2(8.f, 56.f) / 64.f,
-		// HeadBottom
-		Vector2(16.f, 64.f) / 64.f, Vector2(24.f, 64.f) / 64.f, Vector2(24.f, 56.f) / 64.f, Vector2(16.f, 56.f) / 64.f,
-		// BodyRight
-		Vector2(16.f, 32.f) / 64.f, Vector2(20.f, 32.f) / 64.f, Vector2(20.f, 44.f) / 64.f, Vector2(16.f, 44.f) / 64.f,
-		// BodyFront
-		Vector2(20.f, 32.f) / 64.f, Vector2(20.f, 44.f) / 64.f, Vector2(28.f, 44.f) / 64.f, Vector2(28.f, 32.f) / 64.f,
-		// BodyBack
-		Vector2(36.f, 32.f) / 64.f, Vector2(36.f, 44.f) / 64.f, Vector2(28.f, 44.f) / 64.f, Vector2(28.f, 32.f) / 64.f,
-		// BodyLeft
-		Vector2(40.f, 32.f) / 64.f, Vector2(36.f, 32.f) / 64.f, Vector2(36.f, 44.f) / 64.f, Vector2(40.f, 44.f) / 64.f,
-		// BodyTop
-		Vector2(20.f, 48.f) / 64.f, Vector2(28.f, 48.f) / 64.f, Vector2(28.f, 44.f) / 64.f, Vector2(20.f, 44.f) / 64.f,
-		// BodyBottom
-		Vector2(28.f, 48.f) / 64.f, Vector2(36.f, 48.f) / 64.f, Vector2(36.f, 44.f) / 64.f, Vector2(28.f, 44.f) / 64.f,
-		// LeftArmRight
-		Vector2(32.f, 0.f) / 64.f, Vector2(36.f, 0.f) / 64.f, Vector2(36.f, 12.f) / 64.f, Vector2(32.f, 12.f) / 64.f,
-		// LeftArmFront
-		Vector2(36.f, 0.f) / 64.f, Vector2(36.f, 12.f) / 64.f, Vector2(40.f, 12.f) / 64.f, Vector2(40.f, 0.f) / 64.f,
-		// LeftArmBack
-		Vector2(44.f, 0.f) / 64.f, Vector2(44.f, 12.f) / 64.f, Vector2(40.f, 12.f) / 64.f, Vector2(40.f, 0.f) / 64.f,
-		// LeftArmLeft
-		Vector2(48.f, 0.f) / 64.f, Vector2(44.f, 0.f) / 64.f, Vector2(44.f, 12.f) / 64.f, Vector2(48.f, 12.f) / 64.f,
-		// LeftArmTop
-		Vector2(36.f, 16.f) / 64.f, Vector2(40.f, 16.f) / 64.f, Vector2(40.f, 12.f) / 64.f, Vector2(36.f, 12.f) / 64.f,
-		// LeftArmBottom
-		Vector2(40.f, 16.f) / 64.f, Vector2(44.f, 16.f) / 64.f, Vector2(44.f, 12.f) / 64.f, Vector2(40.f, 12.f) / 64.f,
-		// RightArmRight
-		Vector2(40.f, 32.f) / 64.f, Vector2(44.f, 32.f) / 64.f, Vector2(44.f, 44.f) / 64.f, Vector2(40.f, 44.f) / 64.f,
-		// RightArmFront
-		Vector2(44.f, 32.f) / 64.f, Vector2(44.f, 44.f) / 64.f, Vector2(48.f, 44.f) / 64.f, Vector2(48.f, 32.f) / 64.f,
-		// RightArmBack
-		Vector2(52.f, 32.f) / 64.f, Vector2(52.f, 44.f) / 64.f, Vector2(48.f, 44.f) / 64.f, Vector2(48.f, 32.f) / 64.f,
-		// RightArmLeft
-		Vector2(56.f, 32.f) / 64.f, Vector2(52.f, 32.f) / 64.f, Vector2(52.f, 44.f) / 64.f, Vector2(56.f, 44.f) / 64.f,
-		// RightArmTop
-		Vector2(44.f, 48.f) / 64.f, Vector2(48.f, 48.f) / 64.f, Vector2(48.f, 44.f) / 64.f, Vector2(44.f, 44.f) / 64.f,
-		// RightArmBottom
-		Vector2(48.f, 48.f) / 64.f, Vector2(52.f, 48.f) / 64.f, Vector2(52.f, 44.f) / 64.f, Vector2(48.f, 44.f) / 64.f,
-		// LeftLegRight
-		Vector2(16.f, 0.f) / 64.f, Vector2(20.f, 0.f) / 64.f, Vector2(20.f, 12.f) / 64.f, Vector2(16.f, 12.f) / 64.f,
-		// LeftLegFront
-		Vector2(20.f, 0.f) / 64.f, Vector2(20.f, 12.f) / 64.f, Vector2(24.f, 12.f) / 64.f, Vector2(24.f, 0.f) / 64.f,
-		// LeftLegBack
-		Vector2(28.f, 0.f) / 64.f, Vector2(28.f, 12.f) / 64.f, Vector2(24.f, 12.f) / 64.f, Vector2(24.f, 0.f) / 64.f,
-		// LeftLegLeft
-		Vector2(32.f, 0.f) / 64.f, Vector2(28.f, 0.f) / 64.f, Vector2(28.f, 12.f) / 64.f, Vector2(32.f, 12.f) / 64.f,
-		// LeftLegTop
-		Vector2(20.f, 16.f) / 64.f, Vector2(24.f, 16.f) / 64.f, Vector2(24.f, 12.f) / 64.f, Vector2(20.f, 12.f) / 64.f,
-		// LeftLegBottom
-		Vector2(24.f, 16.f) / 64.f, Vector2(28.f, 16.f) / 64.f, Vector2(28.f, 12.f) / 64.f, Vector2(24.f, 12.f) / 64.f,
-		// RightLegRight
-		Vector2(0.f, 32.f) / 64.f, Vector2(4.f, 32.f) / 64.f, Vector2(4.f, 44.f) / 64.f, Vector2(0.f, 44.f) / 64.f,
-		// RightLegFront
-		Vector2(4.f, 32.f) / 64.f, Vector2(4.f, 44.f) / 64.f, Vector2(8.f, 44.f) / 64.f, Vector2(8.f, 32.f) / 64.f,
-		// RightLegBack
-		Vector2(12.f, 32.f) / 64.f, Vector2(12.f, 44.f) / 64.f, Vector2(8.f, 44.f) / 64.f, Vector2(8.f, 32.f) / 64.f,
-		// RightLegLeft
-		Vector2(16.f, 32.f) / 64.f, Vector2(12.f, 32.f) / 64.f, Vector2(12.f, 44.f) / 64.f, Vector2(16.f, 44.f) / 64.f,
-		// RightLegTop
-		Vector2(4.f, 48.f) / 64.f, Vector2(8.f, 48.f) / 64.f, Vector2(8.f, 44.f) / 64.f, Vector2(4.f, 44.f) / 64.f,
-		// RightLegBottom
-		Vector2(8.f, 48.f) / 64.f, Vector2(12.f, 48.f) / 64.f, Vector2(12.f, 44.f) / 64.f, Vector2(8.f, 44.f) / 64.f
-	};
-
-	// 캐릭터 스켈레탈 메시 설정
-	characterMesh.SetMeshType(MeshType::Skinned);
-	auto& cb = characterMesh.GetConnectedBones();
-	auto& w = characterMesh.GetWeights();
-	auto& bones = characterMesh.GetBones();
-
-	// 본 생성
-	bones = {
-		{ GameEngine::RootBone, Bone(GameEngine::RootBone, Transform()) },
-		{ GameEngine::PelvisBone, Bone(GameEngine::PelvisBone, Transform(Vector3(0.f, 1.5f, 0.f))) },
-		{ GameEngine::SpineBone, Bone(GameEngine::SpineBone, Transform(Vector3(0.f, 2.25f, 0.f))) },
-		{ GameEngine::LeftArmBone, Bone(GameEngine::LeftArmBone, Transform(Vector3(-0.75f, 3.f, 0.f))) },
-		{ GameEngine::RightArmBone, Bone(GameEngine::RightArmBone, Transform(Vector3(0.75f, 3.f, 0.f))) },
-		{ GameEngine::LeftLegBone, Bone(GameEngine::LeftLegBone, Transform(Vector3(0.25f, 1.5f, 0.f))) },
-		{ GameEngine::RightLegBone, Bone(GameEngine::RightLegBone, Transform(Vector3(-0.25f, 1.5f, 0.f))) },
-		{ GameEngine::NeckBone, Bone(GameEngine::NeckBone, Transform(Vector3(0.f, 3.f, 0.f))) }
-	};
-
-	// 본의 계층 구조 생성
-	Bone& root = characterMesh.GetBone(GameEngine::RootBone);
-	Bone& pelvis = characterMesh.GetBone(GameEngine::PelvisBone);
-	pelvis.SetParent(root);
-	Bone& spine = characterMesh.GetBone(GameEngine::SpineBone);
-	spine.SetParent(pelvis);
-	Bone& leftArm = characterMesh.GetBone(GameEngine::LeftArmBone);
-	leftArm.SetParent(spine);
-	Bone& rightArm = characterMesh.GetBone(GameEngine::RightArmBone);
-	rightArm.SetParent(spine);
-	Bone& leftLeg = characterMesh.GetBone(GameEngine::LeftLegBone);
-	leftLeg.SetParent(pelvis);
-	Bone& rightLeg = characterMesh.GetBone(GameEngine::RightLegBone);
-	rightLeg.SetParent(pelvis);
-	Bone& neck = characterMesh.GetBone(GameEngine::NeckBone);
-	neck.SetParent(spine);
-
-	// 메시에 리깅 
-	static std::array<std::string, 6> boneOrder = {
-		GameEngine::NeckBone, GameEngine::SpineBone, GameEngine::LeftArmBone, GameEngine::RightArmBone, GameEngine::LeftLegBone, GameEngine::RightLegBone
-	};
-
-	cb.resize(v.size());
-	w.resize(v.size());
-	std::fill(cb.begin(), cb.end(), 1);
-
-	for (size_t part = 0; part < 6; part++)
-	{
-		Weight weight;
-		weight.Bones = { boneOrder[part] };
-		weight.Values = { 1.f };
-		auto startIt = w.begin() + part * 24;
-		std::fill(startIt, startIt + 24, weight);
-	}
-
-	characterMesh.CalculateBounds();
-
 	// 화살표 메시 (기즈모 용)
 	Mesh& arrow = CreateMesh(GameEngine::ArrowMesh);
 	arrow.GetVertices().resize(arrowPositions.size());
@@ -266,9 +97,9 @@ bool GameEngine::LoadResources()
 		}
 	}
 
-	// 텍스쳐 로딩
-	Texture& diffuseTexture = CreateTexture(GameEngine::DiffuseTexture, GameEngine::SteveTexturePath);
-	assert(diffuseTexture.IsIntialized());
+	// 캐릭터 메시 생성 - MMD 모델
+	Mesh& characterMesh = CreateMesh(GameEngine::CharacterMesh);
+	PMXLoader::LoadPMX(*this, characterMesh, GameEngine::CharacterPath);
 
 	return true;
 }
@@ -276,11 +107,12 @@ bool GameEngine::LoadResources()
 bool GameEngine::LoadScene()
 {
 	// 플레이어
-	constexpr float playerScale = 100.f;
+	constexpr float playerScale = 40.f;
 
 	GameObject& goPlayer = CreateNewGameObject(GameEngine::PlayerGo);
 	goPlayer.SetMesh(GameEngine::CharacterMesh);
 	goPlayer.GetTransform().SetWorldScale(Vector3::One * playerScale);
+	goPlayer.GetTransform().SetWorldRotation(Rotator(180.f, 0.f, 0.f));
 
 	// 캐릭터 본을 표시할 화살표
 	Mesh& cm = GetMesh(goPlayer.GetMeshKey());
@@ -299,11 +131,13 @@ bool GameEngine::LoadScene()
 
 	// 카메라 릭
 	GameObject& goCameraRig = CreateNewGameObject(GameEngine::CameraRigGo);
-	goCameraRig.GetTransform().SetWorldPosition(Vector3(0.f, 150.f, 0.f));
+	goCameraRig.GetTransform().SetWorldPosition(Vector3(0.f, 350.f, 0.f));
 
 	// 카메라 설정
 	CameraObject& mainCamera = GetMainCamera();
-	mainCamera.GetTransform().SetWorldPosition(Vector3(-500.f, 800.f, 1000.f));
+	mainCamera.SetFOV(35.f);
+	mainCamera.GetTransform().SetWorldPosition(Vector3(-200.f, 800.f, 1200.f));
+	mainCamera.GetTransform().SetWorldRotation(Rotator(180.f, 0.f, 0.f));
 	mainCamera.SetParent(goCameraRig);
 	mainCamera.SetLookAtRotation(goCameraRig);
 

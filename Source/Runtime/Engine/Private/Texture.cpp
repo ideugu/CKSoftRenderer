@@ -1,6 +1,6 @@
 
 #include "Precompiled.h"
-#include "lodepng.h"
+#include "LodePNG/lodepng.h"
 
 Texture::Texture(std::string InFileName)
 {

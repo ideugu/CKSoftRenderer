@@ -11,6 +11,14 @@ struct Weight
 	std::vector<float> Values;
 };
 
+struct TexturesIndice
+{
+	TexturesIndice(std::size_t InTextureKey, size_t InStartIndex, size_t InEndIndex) : TextureKey(InTextureKey), StartIndex(InStartIndex), EndIndex(InEndIndex) {}
+	std::size_t TextureKey;
+	size_t StartIndex;
+	size_t EndIndex;
+};
+
 class Mesh
 {
 public:
@@ -28,6 +36,8 @@ public:
 	const std::vector<LinearColor>& GetColors() const { return _Colors; }
 	std::vector<Vector2>& GetUVs() { return _UVs; }
 	const std::vector<Vector2>& GetUVs() const { return _UVs; }
+	std::vector<TexturesIndice>& GetTextureIndices() { return _TextureIndices; }
+	const std::vector<TexturesIndice>& GetTextureIndices() const { return _TextureIndices; }
 
 	// 바운딩 볼륨 관련 함수
 	void CalculateBounds();
@@ -55,6 +65,7 @@ private:
 	std::vector<size_t> _Indices;
 	std::vector<LinearColor> _Colors;
 	std::vector<Vector2> _UVs;
+	std::vector<TexturesIndice> _TextureIndices;
 
 	std::vector<BYTE> _ConnectedBones;
 	std::vector<Weight> _Weights;

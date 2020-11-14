@@ -96,7 +96,7 @@ private:
 	void Render3D();
 
 	void DrawMesh3D(const class DDD::Mesh& InMesh, const Matrix4x4& InMatrix, const LinearColor& InColor);
-	void DrawTriangle3D(std::vector<DDD::Vertex3D>& InVertices, const LinearColor& InColor, FillMode InFillMode);
+	void DrawTriangle3D(std::size_t InTextureKey, std::vector<DDD::Vertex3D>& InVertices, const LinearColor& InColor, FillMode InFillMode);
 	bool IsDepthBufferDrawing() const { return _CurrentDrawMode == DrawMode::DepthBuffer; }
 	bool IsWireframeDrawing() const { return _CurrentDrawMode == DrawMode::Wireframe; }
 	DrawMode GetDrawMode() const { return _CurrentDrawMode; }
@@ -118,10 +118,10 @@ private:
 	ScreenPoint _ScreenSize;
 
 	// 배경 색상
-	LinearColor _BackgroundColor = LinearColor::WhiteSmoke;
+	LinearColor _BackgroundColor = LinearColor::Black;
 
 	// 와이어프레임 색상
-	LinearColor _WireframeColor = LinearColor::DimGray;
+	LinearColor _WireframeColor = LinearColor::LightGray;
 
 	// 성능 측정
 	long long _StartTimeStamp = 0;

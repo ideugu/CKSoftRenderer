@@ -21,4 +21,6 @@
 #include "3D/CameraObject.h"
 #include "3D/GameEngine.h"
 
+#include "3D/PMXLoader.h"
+
 using namespace CK;
