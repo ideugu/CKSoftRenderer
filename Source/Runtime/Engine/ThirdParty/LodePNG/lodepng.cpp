@@ -5720,6 +5720,21 @@ void load_file(std::vector<unsigned char>& buffer, const std::string& filename)
   if(size > 0) file.read((char*)(&buffer[0]), size);
 }
 
+void load_file(std::vector<unsigned char>& buffer, const std::wstring& filename)
+{
+    std::ifstream file(filename.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
+
+    /*get filesize*/
+    std::streamsize size = 0;
+    if (file.seekg(0, std::ios::end).good()) size = file.tellg();
+    if (file.seekg(0, std::ios::beg).good()) size -= file.tellg();
+
+    /*read contents of the file into the vector*/
+    buffer.resize(size_t(size));
+    if (size > 0) file.read((char*)(&buffer[0]), size);
+}
+
+
 /*write given buffer to the file, overwriting the file, it doesn't append to it.*/
 void save_file(const std::vector<unsigned char>& buffer, const std::string& filename)
 {
@@ -5854,6 +5869,15 @@ unsigned decode(std::vector<unsigned char>& out, unsigned& w, unsigned& h, const
   load_file(buffer, filename);
   return decode(out, w, h, buffer, colortype, bitdepth);
 }
+
+unsigned decode(std::vector<unsigned char>& out, unsigned& w, unsigned& h, const std::wstring& filename,
+    LodePNGColorType colortype, unsigned bitdepth)
+{
+    std::vector<unsigned char> buffer;
+    load_file(buffer, filename);
+    return decode(out, w, h, buffer, colortype, bitdepth);
+}
+
 #endif //LODEPNG_COMPILE_DECODER
 #endif //LODEPNG_COMPILE_DISK
 

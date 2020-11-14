@@ -7,7 +7,39 @@ Texture::Texture(std::string InFileName)
 	LoadPNG(InFileName);
 }
 
+Texture::Texture(std::wstring InFileName)
+{
+	LoadPNG(InFileName);
+}
+
 void Texture::LoadPNG(std::string InFileName)
+{
+	std::vector<BYTE> image;
+	unsigned w, h;
+	unsigned int error = lodepng::decode(image, w, h, InFileName);
+	if (error != NULL)
+	{
+		Release();
+		return;
+	}
+
+	_Width = static_cast<UINT32>(w);
+	_Height = static_cast<UINT32>(h);
+
+	size_t bufferLength = image.size() / 4;
+	_Buffer.reserve(bufferLength);
+	for (UINT32 j = 0; j < _Height; j++)
+	{
+		for (UINT32 i = 0; i < _Width; i++)
+		{
+			auto ix = (j * _Width + i) * 4;
+			Color32 c(image[ix], image[ix + 1], image[ix + 2], image[ix + 3]);
+			_Buffer.push_back(LinearColor(c));
+		}
+	}
+}
+
+void Texture::LoadPNG(std::wstring InFileName)
 {
 	std::vector<BYTE> image;
 	unsigned w, h;

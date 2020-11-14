@@ -8,9 +8,9 @@ namespace DDD
 class GameObject
 {
 public:
-	GameObject(const std::string& InName) : _Name(InName)
+	GameObject(const std::wstring& InName) : _Name(InName)
 	{
-		_Hash = std::hash<std::string>()(_Name);
+		_Hash = std::hash<std::wstring>()(_Name);
 	}
 
 	~GameObject() {}
@@ -35,7 +35,7 @@ public:
 	FORCEINLINE const LinearColor& GetColor() const { return _Color; }
 
 	// 키 관련
-	const std::string& GetName() const { return _Name; }
+	const std::wstring& GetName() const { return _Name; }
 	std::size_t GetHash() const { return _Hash; }
 
 	// 검색 관련
@@ -52,7 +52,7 @@ private:
 	GameObjectType _GameObjectType = GameObjectType::Normal;
 	bool _IsVisible = true;
 	std::size_t _Hash = Math::InvalidHash;
-	std::string _Name;
+	std::wstring _Name;
 	std::size_t _MeshKey = Math::InvalidHash;
 	TransformComponent _Transform;
 	LinearColor _Color = LinearColor::Error;

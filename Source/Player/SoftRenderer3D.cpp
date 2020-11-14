@@ -96,9 +96,9 @@ void SoftRenderer::LateUpdate3D(float InDeltaSeconds)
 	// 캐릭터 메시
 	Mesh& m = g.GetMesh(goPlayer.GetMeshKey());
 
-	//// 목의 회전
-	//Bone& neckBone = m.GetBone(GameEngine::NeckBone);
-	//neckBone.GetTransform().SetLocalRotation(Rotator(neckCurve, 0.f, 0.f));
+	// 목의 회전
+	Bone& neckBone = m.GetBone(L"首");
+	neckBone.GetTransform().SetLocalRotation(Rotator(neckCurve, 0.f, 0.f));
 
 	//// 팔의 회전
 	//Bone& leftArmBone = m.GetBone(GameEngine::LeftArmBone);
@@ -176,6 +176,13 @@ void SoftRenderer::Render3D()
 					continue;
 				}
 				const Bone& bone = b.second;
+
+				size_t p = bone.GetProperty();
+				if (p & 0x20)
+				{
+					continue;
+				}
+
 				const Bone& parentBone = mesh.GetBone(bone.GetParentName());
 				const Transform& tGameObject = transform.GetWorldTransform();
 
@@ -219,38 +226,39 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 		vertices[vi].Position = Vector4(InMesh.GetVertices()[vi]);
 
 		// 위치에 대해 스키닝 연산 수행
-		//if (InMesh.IsSkinnedMesh())
-		//{
-		//	Vector4 totalPosition = Vector4::Zero;
-		//	Weight w = InMesh.GetWeights()[vi];
-		//	for (size_t wi = 0; wi < InMesh.GetConnectedBones()[vi]; ++wi)
-		//	{
-		//		std::string boneName = w.Bones[wi];
-		//		if (InMesh.HasBone(boneName))
-		//		{
-		//			const Bone& b = InMesh.GetBone(boneName);
-		//			const Transform& t = b.GetTransform().GetWorldTransform();  // 월드 공간
-		//			const Transform& bindPose = b.GetBindPose(); // 월드 공간
+		if (InMesh.IsSkinnedMesh())
+		{
+			Vector4 totalPosition = Vector4::Zero;
+			Weight w = InMesh.GetWeights()[vi];
+			size_t connectedBoneNumbers = InMesh.GetConnectedBones()[vi];
+			for (size_t wi = 0; wi < connectedBoneNumbers; ++wi)
+			{
+				std::wstring boneName = w.Bones[wi];
+				if (InMesh.HasBone(boneName))
+				{
+					const Bone& b = InMesh.GetBone(boneName);
+					const Transform& t = b.GetTransform().GetWorldTransform();  // 월드 공간
+					const Transform& bindPose = b.GetBindPose(); // 월드 공간
 
-		//			// BindPose 공간을 중심으로 Bone의 로컬 공간을 계산
-		//			Transform boneLocal = t.WorldToLocal(bindPose);
+					// BindPose 공간을 중심으로 Bone의 로컬 공간을 계산
+					Transform boneLocal = t.WorldToLocal(bindPose);
 
-		//			// BindPose 공간으로 점을 변화
-		//			Vector3 localPosition = bindPose.WorldToLocalVector(vertices[vi].Position.ToVector3());
+					// BindPose 공간으로 점을 변화
+					Vector3 localPosition = bindPose.WorldToLocalVector(vertices[vi].Position.ToVector3());
 
-		//			// BindPose 공간에서의 점의 최종 위치
-		//			Vector3 skinnedLocalPosition = boneLocal.GetMatrix() * localPosition;
+					// BindPose 공간에서의 점의 최종 위치
+					Vector3 skinnedLocalPosition = boneLocal.GetMatrix() * localPosition;
 
-		//			// 월드 공간으로 다시 변경
-		//			Vector3 skinnedWorldPosition = bindPose.GetMatrix() * skinnedLocalPosition;
+					// 월드 공간으로 다시 변경
+					Vector3 skinnedWorldPosition = bindPose.GetMatrix() * skinnedLocalPosition;
 
-		//			// 가중치를 곱해서 더해줌
-		//			totalPosition += Vector4(skinnedWorldPosition * w.Values[wi], true);
-		//		}
-		//	}
+					// 가중치를 곱해서 더해줌
+					totalPosition += Vector4(skinnedWorldPosition * w.Values[wi], true);
+				}
+			}
 
-		//	vertices[vi].Position = totalPosition;
-		//}
+			vertices[vi].Position = totalPosition;
+		}
 
 		if (InMesh.HasColor())
 		{
@@ -305,9 +313,9 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 	{
 		for (const auto& t : textureIndice)
 		{
-			for (int ti = t.StartIndex; ti < t.EndIndex; ti += 3)
+			for (size_t ti = t.StartIndex; ti < t.EndIndex; ti += 3)
 			{
-				int bi0 = ti, bi1 = ti + 1, bi2 = ti + 2;
+				size_t bi0 = ti, bi1 = ti + 1, bi2 = ti + 2;
 				std::vector<Vertex3D> tvs = { vertices[indice[bi0]] , vertices[indice[bi1]] , vertices[indice[bi2]] };
 
 				// 동차좌표계에서 클리핑을 위한 설정

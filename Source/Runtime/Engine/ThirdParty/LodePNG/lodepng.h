@@ -237,6 +237,9 @@ Same as the other decode functions, but instead takes a filename as input.
 unsigned decode(std::vector<unsigned char>& out, unsigned& w, unsigned& h,
                 const std::string& filename,
                 LodePNGColorType colortype = LCT_RGBA, unsigned bitdepth = 8);
+unsigned decode(std::vector<unsigned char>& out, unsigned& w, unsigned& h,
+    const std::wstring& filename,
+    LodePNGColorType colortype = LCT_RGBA, unsigned bitdepth = 8);
 #endif //LODEPNG_COMPILE_DISK
 #endif //LODEPNG_COMPILE_DECODER
 
@@ -815,6 +818,7 @@ Load a file from disk into an std::vector. If the vector is empty, then either
 the file doesn't exist or is an empty file.
 */
 void load_file(std::vector<unsigned char>& buffer, const std::string& filename);
+void load_file(std::vector<unsigned char>& buffer, const std::wstring& filename);
 
 /*
 Save the binary data in an std::vector to a file on disk. The file is overwritten

@@ -8,10 +8,12 @@ class Texture
 public:
 	Texture() = default;
 	Texture(std::string InFileName);
+	Texture(std::wstring InFileName);
 	~Texture() {}
 
 public:
 	void LoadPNG(std::string InFileName);
+	void LoadPNG(std::wstring InFileName);
 	void Release();
 	bool IsIntialized() const { return (_Buffer.size() > 0); }
 	UINT32 GetWidth() const { return _Width; }

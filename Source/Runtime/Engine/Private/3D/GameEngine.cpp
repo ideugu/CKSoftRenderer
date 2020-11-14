@@ -4,14 +4,14 @@
 using namespace CK::DDD;
 
 // 메시
-const std::size_t GameEngine::CharacterMesh = std::hash<std::string>()("SK_Character");
-const std::size_t GameEngine::ArrowMesh = std::hash<std::string>()("SM_Arrow");
-const std::size_t GameEngine::PlaneMesh = std::hash<std::string>()("SM_Plane");
-const std::string GameEngine::CharacterPath("Character.pmx");
+const std::size_t GameEngine::CharacterMesh = std::hash<std::wstring>()(L"SK_Character");
+const std::size_t GameEngine::ArrowMesh = std::hash<std::wstring>()(L"SM_Arrow");
+const std::size_t GameEngine::PlaneMesh = std::hash<std::wstring>()(L"SM_Plane");
+const std::wstring GameEngine::CharacterPath(L"Character.pmx");
 
 // 게임 오브젝트
-const std::string GameEngine::PlayerGo("Player");
-const std::string GameEngine::CameraRigGo("CameraRig");
+const std::wstring GameEngine::PlayerGo(L"Player");
+const std::wstring GameEngine::CameraRigGo(L"CameraRig");
 
 struct GameObjectCompare
 {
@@ -151,16 +151,16 @@ Mesh& GameEngine::CreateMesh(const std::size_t& InKey)
 	return *_Meshes.at(InKey).get();
 }
 
-Texture& GameEngine::CreateTexture(const std::size_t& InKey, const std::string& InTexturePath)
+Texture& GameEngine::CreateTexture(const std::size_t& InKey, const std::wstring& InTexturePath)
 {
 	auto texturePtr = std::make_unique<Texture>(InTexturePath);
 	_Textures.insert({ InKey, std::move(texturePtr) });
 	return *_Textures.at(InKey).get();
 }
 
-GameObject& GameEngine::CreateNewGameObject(const std::string& InName)
+GameObject& GameEngine::CreateNewGameObject(const std::wstring& InName)
 {
-	std::size_t inHash = std::hash<std::string>()(InName);
+	std::size_t inHash = std::hash<std::wstring>()(InName);
 	const auto it = std::lower_bound(SceneBegin(), SceneEnd(), inHash, GameObjectCompare());
 
 	auto newGameObject = std::make_unique<GameObject>(InName);
@@ -190,9 +190,9 @@ GameObject& GameEngine::CreateNewGameObject(const std::string& InName)
 	return GetGameObject(InName);
 }
 
-GameObject& GameEngine::GetGameObject(const std::string& InName)
+GameObject& GameEngine::GetGameObject(const std::wstring& InName)
 {
-	std::size_t targetHash = std::hash<std::string>()(InName);
+	std::size_t targetHash = std::hash<std::wstring>()(InName);
 	const auto it = std::lower_bound(SceneBegin(), SceneEnd(), targetHash, GameObjectCompare());
 
 	return (it != _Scene.end()) ? *(*it).get() : GameObject::Invalid;

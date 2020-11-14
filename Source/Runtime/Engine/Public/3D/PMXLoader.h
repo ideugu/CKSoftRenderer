@@ -7,7 +7,7 @@ namespace DDD
 
 struct PMXLoader
 {
-	static bool LoadPMX(GameEngine& InGameEngine, Mesh& InMesh, std::string fileName);
+	static bool LoadPMX(GameEngine& InGameEngine, Mesh& InMesh, std::wstring fileName);
 };
 
 }
