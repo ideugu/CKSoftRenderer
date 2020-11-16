@@ -122,6 +122,12 @@ void SoftRenderer::LateUpdate3D(float InDeltaSeconds)
 	// 캐릭터 메시
 	Mesh& m = g.GetMesh(goPlayer.GetMeshKey());
 
+	// 본이 있는지 확인. 없으면 애니메이션 커브 종료
+	if (!m.HasBone(L"首"))
+	{
+		return;
+	}
+
 	// 목의 회전
 	Bone& neckBone = m.GetBone(L"首");
 	neckBone.GetTransform().SetLocalRotation(Rotator(neckCurve, 0.f, 0.f));
