@@ -1,11 +1,11 @@
 #pragma once
 
 #include <functional>
-
 #include "InputManager.h"
-#include "Texture.h"
 
 #include "EngineInterface.h"
+
+#include "Texture.h"
 
 #include "2D/Mesh.h"
 #include "2D/TransformComponent.h"

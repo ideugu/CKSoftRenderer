@@ -149,6 +149,5 @@ bool PMXLoader::LoadPMX(GameEngine& InGameEngine, Mesh& InMesh, std::wstring InF
 		cnt += c;
 	}
 
-
 	return true;
 }

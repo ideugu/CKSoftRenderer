@@ -1,69 +1,61 @@
 
 #include "Precompiled.h"
-#include "LodePNG/lodepng.h"
+#define STB_IMAGE_IMPLEMENTATION
+#pragma warning( push )
+#pragma warning( disable : 26451 )
+#include "Stb/stb_image.h"
+#pragma warning( pop )
 
 Texture::Texture(std::string InFileName)
 {
-	LoadPNG(InFileName);
+	FILE* f = NULL;
+	if (0 != fopen_s(&f, InFileName.c_str(), "rb"))
+	{
+		return;
+	}
+	LoadFromFile(f);
 }
 
 Texture::Texture(std::wstring InFileName)
 {
-	LoadPNG(InFileName);
+	FILE* f = NULL;
+	if (0 != _wfopen_s(&f, InFileName.c_str(), L"rb"))
+	{
+		return;
+	}
+	LoadFromFile(f);
 }
 
-void Texture::LoadPNG(std::string InFileName)
+void Texture::LoadFromFile(FILE* InFilePtr)
 {
-	std::vector<BYTE> image;
-	unsigned w, h;
-	unsigned int error = lodepng::decode(image, w, h, InFileName);
-	if (error != NULL)
+	if (InFilePtr == NULL)
 	{
-		Release();
 		return;
 	}
 
-	_Width = static_cast<UINT32>(w);
-	_Height = static_cast<UINT32>(h);
-
-	size_t bufferLength = image.size() / 4;
-	_Buffer.reserve(bufferLength);
-	for (UINT32 j = 0; j < _Height; j++)
+	Release();
+	int width = 0, height = 0, channel = 0;
+	stbi_uc* pixelsPtr = stbi_load_from_file(InFilePtr, &width, &height, &channel, STBI_rgb_alpha);
+	if (pixelsPtr == NULL)
 	{
-		for (UINT32 i = 0; i < _Width; i++)
-		{
-			auto ix = (j * _Width + i) * 4;
-			Color32 c(image[ix], image[ix + 1], image[ix + 2], image[ix + 3]);
-			_Buffer.push_back(LinearColor(c));
-		}
-	}
-}
-
-void Texture::LoadPNG(std::wstring InFileName)
-{
-	std::vector<BYTE> image;
-	unsigned w, h;
-	unsigned int error = lodepng::decode(image, w, h, InFileName);
-	if (error != NULL)
-	{
-		Release();
 		return;
 	}
 
-	_Width = static_cast<UINT32>(w);
-	_Height = static_cast<UINT32>(h);
-
-	size_t bufferLength = image.size() / 4;
-	_Buffer.reserve(bufferLength);
-	for (UINT32 j = 0; j < _Height; j++)
+	_Width = static_cast<UINT32>(width);
+	_Height = static_cast<UINT32>(height);
+	size_t pixelNumbers = static_cast<size_t>(_Width) * static_cast<size_t>(_Height);
+	_Buffer.reserve(pixelNumbers);
+	for (size_t j = 0; j < _Height; j++)
 	{
-		for (UINT32 i = 0; i < _Width; i++)
+		for (size_t i = 0; i < _Width; i++)
 		{
-			auto ix = (j * _Width + i) * 4;
-			Color32 c(image[ix], image[ix + 1], image[ix + 2], image[ix + 3]);
+			size_t ix = (j * _Width + i) * 4;
+			Color32 c(pixelsPtr[ix], pixelsPtr[ix + 1], pixelsPtr[ix + 2], pixelsPtr[ix + 3]);
 			_Buffer.push_back(LinearColor(c));
 		}
 	}
+
+	return;
 }
 
 void Texture::Release()
@@ -82,7 +74,7 @@ LinearColor Texture::GetSample(Vector2 InUV) const
 
 	int x = Math::FloorToInt(InUV.X * _Width) % _Width;
 	int y = Math::FloorToInt(InUV.Y * _Height) % _Height;
-	size_t index = static_cast<size_t>(_Width * (_Height - (1 + y)) + x);
+	int index = _Width * (_Height - (1 + y)) + x;
 	if (index >= _Buffer.size())
 	{
 		return LinearColor::Error;
