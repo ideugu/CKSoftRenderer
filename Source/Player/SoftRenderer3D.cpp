@@ -245,7 +245,7 @@ void SoftRenderer::DrawMesh3D(const Mesh& InMesh, const Matrix4x4& InMatrix, con
 					Vector3 skinnedWorldPosition = bindPose.GetMatrix() * skinnedLocalPosition;
 
 					// 가중치를 곱해서 더해줌
-					totalPosition += Vector4(skinnedWorldPosition * w.Values[wi], true);
+					totalPosition += Vector4(skinnedWorldPosition, true) * w.Values[wi];
 				}
 			}
 
