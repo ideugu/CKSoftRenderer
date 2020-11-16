@@ -4,6 +4,12 @@
 namespace CK
 {
 
+enum class RendererType : UINT32
+{
+	Software = 0,
+	Hardware
+};
+
 class RendererInterface
 {
 public:
@@ -28,6 +34,11 @@ public:
 
 	virtual void PushStatisticText(std::string && InText) = 0;
 	virtual void PushStatisticTexts(std::vector<std::string> && InTexts) = 0;
+
+	virtual void Resize(const ScreenPoint& InScreenSize) = 0;
+	virtual void Draw() = 0;
+
+	virtual RendererType GetRendererType() const = 0;
 };
 
 }

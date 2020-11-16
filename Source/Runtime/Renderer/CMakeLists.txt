@@ -15,6 +15,11 @@ file(GLOB_RECURSE MODULE_FILES
        ${PROJECT_SOURCE_DIR}/Public/3D/*.h
        ${PROJECT_SOURCE_DIR}/Private/2D/*.cpp
        ${PROJECT_SOURCE_DIR}/Private/3D/*.cpp
+       ${PROJECT_SOURCE_DIR}/Public/Vulkan/*.h
+       ${PROJECT_SOURCE_DIR}/Public/Vulkan/*.h
+       ${PROJECT_SOURCE_DIR}/Private/Vulkan/*.cpp
+       ${PROJECT_SOURCE_DIR}/Private/Vulkan/*.cpp
+       ${PROJECT_SOURCE_DIR}/HardwareAPI/Vulkan/Include/*.h
 	   )
 
 file(GLOB_RECURSE THIRDPARTY_FILES
@@ -68,9 +73,13 @@ endforeach()
 include_directories(
     ${PROJECT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/Public
-    ${PROJECT_SOURCE_DIR}/ThirdParty
-    ${RUNTIME_MODULE_DIR}/Math/Public	
+    ${RUNTIME_MODULE_DIR}/Math/Public
 	)
+
+################################################################################
+# Link library
+################################################################################
+link_libraries(${PROJECT_SOURCE_DIR}/Lib/Vulkan/vulkan-1.lib)
 
 
 ################################################################################

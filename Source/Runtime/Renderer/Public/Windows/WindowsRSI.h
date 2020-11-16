@@ -33,6 +33,11 @@ public:
 	virtual void PushStatisticText(std::string && InText) override;
 	virtual void PushStatisticTexts(std::vector<std::string> && InTexts) override;
 
+	virtual void Resize(const ScreenPoint& InScreenSize) override {}
+	virtual void Draw() override {}
+
+	virtual RendererType GetRendererType() const { return RendererType::Software; }
+
 private:
 	int TestRegion(const Vector2& InVectorPos, const Vector2& InMinPos, const Vector2& InMaxPos);
 	bool CohenSutherlandLineClip(Vector2& InOutStartPos, Vector2& InOutEndPos, const Vector2& InMinPos, const Vector2& InMaxPos);
