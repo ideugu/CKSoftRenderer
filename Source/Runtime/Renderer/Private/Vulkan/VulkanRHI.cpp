@@ -1,7 +1,7 @@
 
 #include "Precompiled.h"
 
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) 
+VkResult VulkanRHI::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
 {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr) {
@@ -12,7 +12,7 @@ VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMes
     }
 }
 
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) 
+void VulkanRHI::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
 {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
@@ -156,6 +156,13 @@ void VulkanRHI::CreateInstance()
     }
 }
 
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) 
+{
+    //std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+    return VK_FALSE;
+}
+
 void VulkanRHI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
     createInfo = {};
@@ -167,34 +174,33 @@ void VulkanRHI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfo
 
 std::vector<const char*> VulkanRHI::GetRequiredExtensions()
 {
-    uint32_t glfwExtensionCount = 2;
+    //uint32_t glfwExtensionCount = 2;
 
-    void* handle = ::LoadLibraryA("vulkan-1.dll");
-    if (!handle)
-    {
-        throw std::runtime_error("Vulkan: Loader not found");
-    }
+    //void* handle = ::LoadLibraryA("vulkan-1.dll");
+    //if (!handle)
+    //{
+    //    throw std::runtime_error("Vulkan: Loader not found");
+    //}
 
-    instanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress((HMODULE)handle, "vkGetInstanceProcAddr");
-    if (!instanceProcAddr)
-    {
-        throw std::runtime_error("Vulkan: Loader does not export vkGetInstanceProcAddr");
-    }
+    //PFN_vkGetInstanceProcAddr instanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress((HMODULE)handle, "vkGetInstanceProcAddr");
+    //if (!instanceProcAddr)
+    //{
+    //    throw std::runtime_error("Vulkan: Loader does not export vkGetInstanceProcAddr");
+    //}
 
-    PFN_vkEnumerateInstanceExtensionProperties enumerateIntanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)
-        instanceProcAddr(NULL, "vkEnumerateInstanceExtensionProperties");
-    if (!enumerateIntanceExtensionProperties)
-    {
-        throw std::runtime_error("Vulkan: Failed to retrieve vkEnumerateInstanceExtensionProperties");
-    }
+    //PFN_vkEnumerateInstanceExtensionProperties enumerateIntanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)vkGetInstanceProcAddr(NULL, "vkEnumerateInstanceExtensionProperties");
+    //if (!enumerateIntanceExtensionProperties)
+    //{
+    //    throw std::runtime_error("Vulkan: Failed to retrieve vkEnumerateInstanceExtensionProperties");
+    //}
 
-    UINT32 count = 0;
-    VkResult err;
-    err = enumerateIntanceExtensionProperties(NULL, &count, NULL);
-    if (err)
-    {
-        throw std::runtime_error("Vulkan: Failed to query instance extension count");
-    }
+    //UINT32 count = 0;
+    //VkResult err;
+    //err = enumerateIntanceExtensionProperties(NULL, &count, NULL);
+    //if (err)
+    //{
+    //    throw std::runtime_error("Vulkan: Failed to query instance extension count");
+    //}
 
     //VkExtensionProperties* ep = calloc(count, sizeof(VkExtensionProperties));
     //err = enumerateIntanceExtensionProperties(NULL, &count, ep);
@@ -244,7 +250,7 @@ std::vector<const char*> VulkanRHI::GetRequiredExtensions()
     //    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     //}
 
-    std::vector<const char*> extensions = { "VK_KHR_surface" , "VK_KHR_win32_surface" };
+    std::vector<const char*> extensions = { "VK_KHR_surface" , "VK_KHR_win32_surface", "VK_EXT_debug_utils" };
     return extensions;
 }
 
@@ -281,7 +287,8 @@ void VulkanRHI::SetupDebugMessenger() {
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     PopulateDebugMessengerCreateInfo(createInfo);
 
-    if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+    VkResult ret = CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger);
+    if (ret != VK_SUCCESS) {
         throw std::runtime_error("failed to set up debug messenger!");
     }
 }
@@ -291,8 +298,7 @@ void VulkanRHI::CreateSurface()
     VkResult err;
     VkWin32SurfaceCreateInfoKHR sci;
     PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
-    //vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
-    vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)instanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
+    vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
     if (!vkCreateWin32SurfaceKHR)
     {
         throw std::runtime_error("Win32: Vulkan instance missing VK_KHR_win32_surface extension");
@@ -426,7 +432,8 @@ void VulkanRHI::CreateLogicalDevice()
 
     createInfo.pEnabledFeatures = &deviceFeatures;
 
-    createInfo.enabledExtensionCount = 0;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
     if (enableValidationLayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -625,8 +632,8 @@ std::vector<char> VulkanRHI::readFile(const std::string& filename)
 
 void VulkanRHI::CreateGraphicsPipeline()
 {
-    auto vertShaderCode = readFile("shaders/vert.spv");
-    auto fragShaderCode = readFile("shaders/frag.spv");
+    auto vertShaderCode = readFile("Shaders/vert.spv");
+    auto fragShaderCode = readFile("Shaders/frag.spv");
 
     VkShaderModule vertShaderModule = CreateShaderModule(vertShaderCode);
     VkShaderModule fragShaderModule = CreateShaderModule(fragShaderCode);
@@ -848,7 +855,8 @@ void VulkanRHI::CreateCommandBuffers() {
 
         vkCmdEndRenderPass(commandBuffers[i]);
 
-        if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+        VkResult result = vkEndCommandBuffer(commandBuffers[i]);
+        if (result != VK_SUCCESS) {
             throw std::runtime_error("failed to record command buffer!");
         }
     }

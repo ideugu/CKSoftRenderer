@@ -86,11 +86,8 @@ public:
 private:
     void CreateInstance();
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
-        //std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
-        return VK_FALSE;
-    }
+    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+    void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
     void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
     bool CheckValidationLayerSupport();
     std::vector<const char*> VulkanRHI::GetRequiredExtensions();
@@ -143,13 +140,13 @@ private:
     const std::vector<const char*> validationLayers = {
         "VK_LAYER_KHRONOS_validation"
     };
+
     const std::vector<const char*> deviceExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
     char* extensions[2];
     VkDebugUtilsMessengerEXT debugMessenger;
-    PFN_vkGetInstanceProcAddr instanceProcAddr;
     VkSurfaceKHR surface;
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -178,7 +175,7 @@ private:
     size_t currentFrame = 0;
 
     bool framebufferResized = false;
-    bool enableValidationLayers = false;
+    bool enableValidationLayers = true;
 
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
