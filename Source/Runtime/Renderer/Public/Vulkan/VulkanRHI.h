@@ -5,7 +5,7 @@ namespace CK
 {
 
 struct QueueFamilyIndices {
-    std::optional<UINT32> GraphicsFamily;
+    std::optional<uint32_t> GraphicsFamily;
     std::optional<uint32_t> PresentFamily;
 
     bool isComplete() {
@@ -85,6 +85,15 @@ public:
 
 private:
     void CreateInstance();
+
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+        //std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+
+        return VK_FALSE;
+    }
+    void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+    bool CheckValidationLayerSupport();
+    std::vector<const char*> VulkanRHI::GetRequiredExtensions();
     void SetupDebugMessenger();
     void CreateSurface();
 
@@ -97,6 +106,8 @@ private:
     VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
     VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+    bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+
     void CreateSwapChain();
     void CreateImageViews();
     static std::vector<char> VulkanRHI::readFile(const std::string& filename);
@@ -129,6 +140,16 @@ private:
     ScreenPoint _ScreenSize;
 
     VkInstance instance;
+    const std::vector<const char*> validationLayers = {
+        "VK_LAYER_KHRONOS_validation"
+    };
+    const std::vector<const char*> deviceExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
+    char* extensions[2];
+    VkDebugUtilsMessengerEXT debugMessenger;
+    PFN_vkGetInstanceProcAddr instanceProcAddr;
     VkSurfaceKHR surface;
 
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -157,6 +178,7 @@ private:
     size_t currentFrame = 0;
 
     bool framebufferResized = false;
+    bool enableValidationLayers = false;
 
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;

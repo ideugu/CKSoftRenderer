@@ -1,6 +1,26 @@
 
 #include "Precompiled.h"
 
+VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) 
+{
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    }
+    else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) 
+{
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
+
+
 VulkanRHI::~VulkanRHI()
 {
 }
@@ -29,7 +49,7 @@ bool VulkanRHI::Init(const ScreenPoint& InScreenSize)
     CreateFramebuffers();
     CreateCommandPool();
     CreateCommandBuffers();
-    return false;
+    return true;
 }
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -61,9 +81,9 @@ void VulkanRHI::Shutdown()
     vkDestroySwapchainKHR(device, swapChain, nullptr);
     vkDestroyDevice(device, nullptr);
 
-    //if (enableValidationLayers) {
-    //    DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
-    //}
+    if (enableValidationLayers) {
+        DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+    }
 
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
@@ -97,6 +117,10 @@ void VulkanRHI::PushStatisticTexts(std::vector<std::string> && InTexts)
 
 void VulkanRHI::CreateInstance()
 {
+    if (enableValidationLayers && !CheckValidationLayerSupport()) {
+        throw std::runtime_error("validation layers requested, but not available!");
+    }
+
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "Hello Triangle";
@@ -109,22 +133,157 @@ void VulkanRHI::CreateInstance()
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
 
-    createInfo.enabledLayerCount = 0;
+    auto extensions = GetRequiredExtensions();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    createInfo.ppEnabledExtensionNames = extensions.data();
+
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+    if (enableValidationLayers) {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
+
+        PopulateDebugMessengerCreateInfo(debugCreateInfo);
+        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+    }
+    else {
+        createInfo.enabledLayerCount = 0;
+
+        createInfo.pNext = nullptr;
+    }
 
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
         throw std::runtime_error("failed to create instance!");
     }
 }
 
-void VulkanRHI::SetupDebugMessenger() {
-    //if (!enableValidationLayers) return;
+void VulkanRHI::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+{
+    createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = debugCallback;
+}
 
-    //VkDebugUtilsMessengerCreateInfoEXT createInfo;
-    //populateDebugMessengerCreateInfo(createInfo);
+std::vector<const char*> VulkanRHI::GetRequiredExtensions()
+{
+    uint32_t glfwExtensionCount = 2;
 
-    //if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-    //    throw std::runtime_error("failed to set up debug messenger!");
+    void* handle = ::LoadLibraryA("vulkan-1.dll");
+    if (!handle)
+    {
+        throw std::runtime_error("Vulkan: Loader not found");
+    }
+
+    instanceProcAddr = (PFN_vkGetInstanceProcAddr)GetProcAddress((HMODULE)handle, "vkGetInstanceProcAddr");
+    if (!instanceProcAddr)
+    {
+        throw std::runtime_error("Vulkan: Loader does not export vkGetInstanceProcAddr");
+    }
+
+    PFN_vkEnumerateInstanceExtensionProperties enumerateIntanceExtensionProperties = (PFN_vkEnumerateInstanceExtensionProperties)
+        instanceProcAddr(NULL, "vkEnumerateInstanceExtensionProperties");
+    if (!enumerateIntanceExtensionProperties)
+    {
+        throw std::runtime_error("Vulkan: Failed to retrieve vkEnumerateInstanceExtensionProperties");
+    }
+
+    UINT32 count = 0;
+    VkResult err;
+    err = enumerateIntanceExtensionProperties(NULL, &count, NULL);
+    if (err)
+    {
+        throw std::runtime_error("Vulkan: Failed to query instance extension count");
+    }
+
+    //VkExtensionProperties* ep = calloc(count, sizeof(VkExtensionProperties));
+    //err = enumerateIntanceExtensionProperties(NULL, &count, ep);
+    //if (err)
+    //{
+    //    free(ep);
+    //    throw std::runtime_error("Vulkan: Failed to query instance extensions");
     //}
+
+//    for (i = 0; i < count; i++)
+//    {
+//        if (strcmp(ep[i].extensionName, "VK_KHR_surface") == 0)
+//        {
+//
+//        }
+//            _glfw.vk.KHR_surface = GLFW_TRUE;
+//#if defined(_GLFW_WIN32)
+//        else if (strcmp(ep[i].extensionName, "VK_KHR_win32_surface") == 0)
+//            _glfw.vk.KHR_win32_surface = GLFW_TRUE;
+//#elif defined(_GLFW_COCOA)
+//        else if (strcmp(ep[i].extensionName, "VK_MVK_macos_surface") == 0)
+//            _glfw.vk.MVK_macos_surface = GLFW_TRUE;
+//        else if (strcmp(ep[i].extensionName, "VK_EXT_metal_surface") == 0)
+//            _glfw.vk.EXT_metal_surface = GLFW_TRUE;
+//#elif defined(_GLFW_X11)
+//        else if (strcmp(ep[i].extensionName, "VK_KHR_xlib_surface") == 0)
+//            _glfw.vk.KHR_xlib_surface = GLFW_TRUE;
+//        else if (strcmp(ep[i].extensionName, "VK_KHR_xcb_surface") == 0)
+//            _glfw.vk.KHR_xcb_surface = GLFW_TRUE;
+//#elif defined(_GLFW_WAYLAND)
+//        else if (strcmp(ep[i].extensionName, "VK_KHR_wayland_surface") == 0)
+//            _glfw.vk.KHR_wayland_surface = GLFW_TRUE;
+//#endif
+//    }
+//
+//    free(ep);
+
+    //extensions[0] = "VK_KHR_surface";
+    //extensions[1] = "VK_KHR_win32_surface";
+
+    //const char** glfwExtensions;
+    //glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+    //std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+    //if (enableValidationLayers) {
+    //    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    //}
+
+    std::vector<const char*> extensions = { "VK_KHR_surface" , "VK_KHR_win32_surface" };
+    return extensions;
+}
+
+
+bool VulkanRHI::CheckValidationLayerSupport() 
+{
+    uint32_t layerCount;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+    std::vector<VkLayerProperties> availableLayers(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+    for (const char* layerName : validationLayers) {
+        bool layerFound = false;
+
+        for (const auto& layerProperties : availableLayers) {
+            if (strcmp(layerName, layerProperties.layerName) == 0) {
+                layerFound = true;
+                break;
+            }
+        }
+
+        if (!layerFound) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void VulkanRHI::SetupDebugMessenger() {
+    if (!enableValidationLayers) return;
+
+    VkDebugUtilsMessengerCreateInfoEXT createInfo;
+    PopulateDebugMessengerCreateInfo(createInfo);
+
+    if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+        throw std::runtime_error("failed to set up debug messenger!");
+    }
 }
 
 void VulkanRHI::CreateSurface()
@@ -132,8 +291,8 @@ void VulkanRHI::CreateSurface()
     VkResult err;
     VkWin32SurfaceCreateInfoKHR sci;
     PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR;
-    vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)
-        vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
+    //vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
+    vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)instanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
     if (!vkCreateWin32SurfaceKHR)
     {
         throw std::runtime_error("Win32: Vulkan instance missing VK_KHR_win32_surface extension");
@@ -166,6 +325,13 @@ QueueFamilyIndices VulkanRHI::FindQueueFamilies(VkPhysicalDevice device) {
             indices.GraphicsFamily = i;
         }
 
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+        if (presentSupport) {
+            indices.PresentFamily = i;
+        }
+
         if (indices.isComplete()) {
             break;
         }
@@ -176,10 +342,38 @@ QueueFamilyIndices VulkanRHI::FindQueueFamilies(VkPhysicalDevice device) {
     return indices;
 }
 
+#include <set>
+
+bool VulkanRHI::checkDeviceExtensionSupport(VkPhysicalDevice device)
+{
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+    std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+    for (const auto& extension : availableExtensions) {
+        requiredExtensions.erase(extension.extensionName);
+    }
+
+    return requiredExtensions.empty();
+}
+
+
 bool VulkanRHI::IsDeviceSuitable(VkPhysicalDevice device) {
     QueueFamilyIndices indices = FindQueueFamilies(device);
 
-    return indices.isComplete();
+    bool extensionsSupported = checkDeviceExtensionSupport(device);
+
+    bool swapChainAdequate = false;
+    if (extensionsSupported) {
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+    }
+
+    return indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
 void VulkanRHI::PickPhysicalDevice() {
@@ -205,37 +399,42 @@ void VulkanRHI::PickPhysicalDevice() {
     }
 }
 
-void VulkanRHI::CreateLogicalDevice() {
+void VulkanRHI::CreateLogicalDevice() 
+{
     QueueFamilyIndices indices = FindQueueFamilies(physicalDevice);
 
-    VkDeviceQueueCreateInfo queueCreateInfo{};
-    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueFamilyIndex = indices.GraphicsFamily.value();
-    queueCreateInfo.queueCount = 1;
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32_t> uniqueQueueFamilies = { indices.GraphicsFamily.value(), indices.PresentFamily.value() };
 
     float queuePriority = 1.0f;
-    queueCreateInfo.pQueuePriorities = &queuePriority;
+    for (uint32_t queueFamily : uniqueQueueFamilies) {
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-    createInfo.pQueueCreateInfos = &queueCreateInfo;
-    createInfo.queueCreateInfoCount = 1;
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
     createInfo.pEnabledFeatures = &deviceFeatures;
 
     createInfo.enabledExtensionCount = 0;
 
-    //if (enableValidationLayers) {
-    //    createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-    //    createInfo.ppEnabledLayerNames = validationLayers.data();
-    //}
-    //else {
-    //    createInfo.enabledLayerCount = 0;
-    //}
-    createInfo.enabledLayerCount = 0;
+    if (enableValidationLayers) {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        createInfo.ppEnabledLayerNames = validationLayers.data();
+    }
+    else {
+        createInfo.enabledLayerCount = 0;
+    }
 
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device!");
@@ -349,10 +548,8 @@ void VulkanRHI::CreateSwapChain() {
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     createInfo.presentMode = presentMode;
     createInfo.clipped = VK_TRUE;
-
-    createInfo.oldSwapchain = VK_NULL_HANDLE;
-
-    if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+    VkResult result = vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain);
+    if (result != VK_SUCCESS) {
         throw std::runtime_error("failed to create swap chain!");
     }
 
