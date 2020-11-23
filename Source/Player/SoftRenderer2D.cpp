@@ -51,6 +51,7 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	static float moveSpeed = 200.f;
 	static float rotateSpeed = 180.f;
 	static float scaleSpeed = 180.f;
+	static float minDistance = 1.f;
 
 	// 플레이어 게임 오브젝트 트랜스폼의 변경
 	GameObject& goPlayer = g.GetGameObject(GameEngine::PlayerGo);
@@ -62,6 +63,23 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	transform.AddRotation(input.GetAxis(InputAxis::WAxis) * rotateSpeed * InDeltaSeconds);
 	float newScale = Math::Clamp(transform.GetScale().X + scaleSpeed * input.GetAxis(InputAxis::ZAxis) * InDeltaSeconds, 15.f, 30.f);
 	transform.SetScale(Vector2::One * newScale);
+
+	// 플레이어를 따라다니는 카메라의 트랜스폼
+	TransformComponent& cameraTransform = g.GetMainCamera().GetTransform();
+	Vector2 playerPos = transform.GetPosition();
+	Vector2 cameraPos = cameraTransform.GetPosition();
+	if ((playerPos - cameraPos).SizeSquared() < minDistance * minDistance)
+	{
+		cameraTransform.SetPosition(playerPos);
+	}
+	else
+	{
+		static float lerpSpeed = 2.f;
+		float ratio = lerpSpeed * InDeltaSeconds;
+		ratio = Math::Clamp(ratio, 0.f, 1.f);
+		Vector2 newCameraPos = cameraPos + (playerPos - cameraPos) * ratio;
+		cameraTransform.SetPosition(newCameraPos);
+	}
 }
 
 // 렌더링 로직
@@ -76,6 +94,9 @@ void SoftRenderer::Render2D()
 	// 전체 그릴 물체의 수
 	size_t totalObjectCount = g.GetScene().size();
 
+	// 카메라의 뷰 행렬
+	Matrix3x3 viewMatrix = g.GetMainCamera().GetViewMatrix();
+
 	// 랜덤하게 생성된 모든 게임 오브젝트들
 	for (auto it = g.SceneBegin(); it != g.SceneEnd(); ++it)
 	{
@@ -88,7 +109,7 @@ void SoftRenderer::Render2D()
 
 		const Mesh& mesh = g.GetMesh(gameObject.GetMeshKey());
 		const TransformComponent& transform = gameObject.GetTransform();
-		Matrix3x3 finalMatrix = transform.GetModelingMatrix();
+		Matrix3x3 finalMatrix = viewMatrix * transform.GetModelingMatrix();
 
 		if (gameObject != GameEngine::PlayerGo)
 		{
